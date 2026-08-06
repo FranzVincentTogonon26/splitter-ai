@@ -49,7 +49,7 @@ accepted at entry and any currency can be chosen for display.
 
 - Header: group name, member avatars, your balance pill
 - Display-currency select + "Add expense" button
-- **Add expense modal:**
+- **Expense modal (one component serves add AND edit):**
   - ✨ AI quick-add: free text ("dinner in Tokyo 4500 yen") → Claude fills
     description, amount, currency
   - Description, amount + currency select (20 ECB currencies)
@@ -57,9 +57,14 @@ accepted at entry and any currency can be chosen for display.
     by exact amounts]"
   - Member checkboxes to include/exclude; per-mode inputs must reconcile
     exactly before Save enables
-- **Expenses list:** description (sparkle icon if added <1 min ago),
-  who paid, original amount (+ display-currency equivalent), date, your
-  share, delete icon (trash → spinner → toast)
+  - Edit (pencil icon per row) opens the same modal pre-filled in the
+    entered currency; saving re-validates and re-converts like a new entry
+- **Activity list:** every ledger record, newest first —
+  - Expense rows: description (sparkle icon if added <1 min ago), who
+    paid, original amount (+ display-currency equivalent), date, your
+    share, pencil + trash icons
+  - Payment rows (settle-ups): who paid whom, amount, date, trash icon —
+    payments are shown and deletable so balances stay auditable
 - **Who owes whom:** simplified debts (≤ n−1 payments); each debt
   involving you has a "Settle up" button — either party can record it
 - **Members:** list with avatars/emails + add-member-by-email form
@@ -102,3 +107,10 @@ accepted at entry and any currency can be chosen for display.
 - NO real money movement — Splitter records that a payment happened;
   it is not a payments processor
 - NO receipts/OCR, recurring expenses, or push notifications (yet)
+
+## Visual Reference
+
+`.context/screenshots/` holds screenshots of the finished app. Before
+building or changing any page, open the matching screenshot and match its
+layout, spacing, and hierarchy. Colors come from the theme tokens, never
+sampled from the image.

@@ -40,11 +40,21 @@ Rules the AI agent must never violate:
 - Money is **integer cents**, never floats. Splits must sum exactly to
   their expense total — the server validates; client rounding is never
   trusted.
-- `Expense.amountCents` is always USD, converted exactly once, server-side,
-  at entry. Stored expenses are never re-converted; only display uses
-  today's rate.
+- `Expense.amountCents` is always USD, converted server-side at entry.
+  Editing an expense is a re-entry: it re-validates everything and
+  re-converts at today's rate. Stored expenses are never re-converted
+  otherwise; only display uses today's rate.
+- Add and edit share one form and one validation path. Edit is never a
+  partial-field update: the server re-runs the full expense validation and
+  rewrites the splits atomically with the total (nested `deleteMany` +
+  `create` in a single update).
 - Balances and simplified debts are **derived at read time, never stored**.
   There is no Debt table.
+- Derived numbers must be **auditable from the screen**: every record that
+  feeds the balance math (expenses AND settlements) is visible in the group
+  Activity list and individually deletable there. Deleting an expense never
+  cascades to settlements — a recorded payment is its own fact and stays
+  until removed explicitly.
 - `User.id` IS the Clerk userId. No internal id mapping. Raw userIds never
   appear in the UI — render names (Base UI selects need an `items` map).
 - AI does language understanding only; money math and FX conversion stay
@@ -70,6 +80,26 @@ Rules the AI agent must never violate:
   server — `lib/db.ts` caches the PrismaClient on `globalThis`, so a
   running server keeps the old client and new columns read back
   `undefined`.
+- After upgrading `next`, STOP the dev server and delete `.next` before
+  restarting. Stale Turbopack chunks from the old version load the wrong
+  vendored React and crash with misleading errors ("React.unstable_postpone
+  is not defined" — surfaced through whatever library touches React first,
+  e.g. a Clerk "only supported in App Router" message).
+- Clerk **Keyless mode is a temporary bridge**: unclaimed keyless instances
+  expire, and clerk-js then fails in the browser with a generic "Something
+  went wrong initializing Clerk". Before recording or demoing, run
+  `clerk doctor` and require all green — authenticated, linked, and real
+  keys in `.env.local` (`clerk env pull`). Claim the keyless instance (URL
+  in `.clerk/.tmp/keyless.json`) to keep its users; `clerk init` starts a
+  fresh instance whose userIds won't match existing DB rows.
 - When swapping tweakcn themes, re-wire the theme's font names to
   `next/font` variables in the `@theme inline` block — registry CSS only
   names fonts, it doesn't load them.
+- Clerk v7 removed the `SignedIn` / `SignedOut` control components (the
+  pre-v7 API most models still generate). Use `<Show when="signed-in">` /
+  `<Show when="signed-out">` from `@clerk/nextjs` instead. Symptom of the
+  old API: "Export SignedIn doesn't exist in target module".
+- Clerk deprecation warning "createRouteMatcher is deprecated" in
+  `proxy.ts` is expected and non-fatal — Clerk is moving to resource-based
+  auth checks (auth verified in each page/action, which this app already
+  does). Migrate proxy.ts when the next major forces it, not before.

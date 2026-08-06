@@ -1,6 +1,6 @@
 ---
 name: nextjs-review
-description: Next.js App Router best-practices checklist (29 common mistakes).
+description: Next.js App Router best-practices checklist (33 common mistakes).
   Use when writing or reviewing Next.js code — pages, layouts, server
   components, client components, server actions, caching, metadata, images,
   or fonts. Also use before committing any PR that touches app/ or lib/.
@@ -104,3 +104,24 @@ Flag violations with the item number. Project context: Next.js 16 App Router,
     toast (`toast.success` / `toast.error`). Buttons that submit a form
     ALSO need explicit `type="submit"` — Base UI Button defaults to
     `type="button"` and silently won't submit.
+31. **Edit reuses the create path.** One modal/form component serves both
+    add and edit (an optional entity prop switches mode); the update action
+    shares the create action's full validation — never a separate,
+    lighter-validated edit form. Modal state is populated on OPEN so a
+    reopen after save shows fresh props, not mount-time values. Related
+    child rows (e.g. splits) are rewritten atomically with their parent
+    (nested `deleteMany` + `create`), and the update is scoped by the
+    parent id (`groupId`) like deletes are.
+32. **Bind server actions instead of cloning client components.** For
+    repeated row actions (delete buttons on different entity types), write
+    ONE generic client component that takes `action: () => Promise<{error?}>`
+    as a prop, and have the server component pass
+    `deleteThing.bind(null, parentId, rowId)`. Bound server actions are
+    serializable across the RSC boundary; per-entity copies of the same
+    button are not a pattern.
+33. **Derived numbers must be auditable on screen.** If the UI shows a
+    computed value (balances, totals, "who owes whom"), every record that
+    feeds it must be visible — and removable — somewhere in the UI. A
+    stored record that silently shifts the math (this repo: settlements)
+    reads as a bug to the user. Corollary: deleting one record type must
+    not silently cascade to another; each fact is removed explicitly.
