@@ -1,43 +1,86 @@
-// Shared view-model types. Shaped to match the Prisma models that arrive in
-// Phase 3, so swapping mock data for real queries is a drop-in change.
-
-export type Member = {
-  id: string; // Clerk userId
-  name: string;
+export type User = {
+  id: string;
   email: string;
-  imageUrl?: string | null;
+  name: string;
+  imageUrl: string | null;
 };
 
-export type ExpenseSplit = {
+export type Group = {
+  id: string;
+  name: string;
+};
+
+export type GroupMemberRole = "admin" | "member";
+
+export type GroupMember = {
+  groupId: string;
   userId: string;
-  amountCents: number;
+  role: GroupMemberRole;
 };
 
 export type Expense = {
   id: string;
-  description: string;
-  amountCents: number;
+  groupId: string;
   paidById: string;
+  amountCents: number;
+  description: string;
   createdAt: Date;
-  splits: ExpenseSplit[];
 };
 
-export type GroupSummary = {
+export type ExpenseSplit = {
+  expenseId: string;
+  userId: string;
+  amountCents: number;
+};
+
+export type Settlement = {
   id: string;
-  name: string;
-  members: Member[];
-  totalCents: number;
-  /** Positive: the group owes you. Negative: you owe the group. */
-  yourBalanceCents: number;
-};
-
-export type GroupDetail = GroupSummary & {
-  expenses: Expense[];
-  simplifiedDebts: SimplifiedDebt[];
-};
-
-export type SimplifiedDebt = {
+  groupId: string;
   fromUserId: string;
   toUserId: string;
   amountCents: number;
+  createdAt: Date;
+};
+
+export type DashboardGroupCard = {
+  group: Group;
+  yourBalanceCents: number;
+  totalCents: number;
+  members: User[];
+};
+
+export type DashboardView = {
+  firstName: string;
+  totalOwedToYouCents: number;
+  totalYouOweCents: number;
+  groups: DashboardGroupCard[];
+};
+
+export type MemberRow = {
+  user: User;
+  role: GroupMemberRole;
+};
+
+export type ExpenseRow = {
+  id: string;
+  description: string;
+  payerName: string;
+  paidLabel: string;
+  dateLabel: string;
+  yourShareCents: number;
+};
+
+export type DebtRow = {
+  fromUserId: string;
+  toUserId: string;
+  amountCents: number;
+};
+
+export type GroupView = {
+  group: Group;
+  yourBalanceCents: number;
+  totalCents: number;
+  members: MemberRow[];
+  expenses: ExpenseRow[];
+  debts: DebtRow[];
 };
