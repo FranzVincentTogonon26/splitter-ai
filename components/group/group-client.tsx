@@ -1,21 +1,52 @@
-"use client"
+"use client";
 
-import { useState, useTransition } from "react";
-import { formatMoney, formatDate } from "@/lib/format";
-import { GroupView } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, Pencil, HandCoins, Sparkles, Users, CreditCard } from "lucide-react";
-import { addExpense, settleUp } from "@/app/actions/expenses";
-import { addMember } from "@/app/actions/groups";
-import { ExpenseModal } from "@/components/expense-modal";
+import { useState, useTransition } from "react"
+import { formatMoney } from "@/lib/format"
+import { GroupView } from "@/lib/types"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Trash2, Pencil, Sparkles, Users, CreditCard } from "lucide-react"
+import { settleUp, type SettleUpState } from "@/app/actions/expenses"
+import { addMember } from "@/app/actions/groups"
+import { ExpenseModal } from "@/components/expense-modal"
+
+const CURRENCIES = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
+]
 
 function formatBalance(cents: number) {
-  return formatMoney(Math.abs(cents));
+  return formatMoney(Math.abs(cents))
+}
+
+function CurrencySelector({ selectedCurrency, onChange }: { selectedCurrency: string; onChange: (currency: string) => void }) {
+  return (
+    <Select value={selectedCurrency} onValueChange={onChange}>
+      <SelectTrigger className="w-[160px]">
+        <SelectValue placeholder="Currency" />
+      </SelectTrigger>
+      <SelectContent>
+        {CURRENCIES.map((c) => (
+          <SelectItem key={c.code} value={c.code}>
+            <div className="flex items-center gap-2">
+              <span className="font-mono">{c.symbol}</span>
+              <span>{c.code}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
 }
 
 function ExpenseRow({
@@ -24,27 +55,27 @@ function ExpenseRow({
   onEdit,
   onDelete,
 }: {
-  expense: GroupView["expenses"][0];
-  isRecent: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
+  expense: GroupView["expenses"][0]
+  isRecent: boolean
+  onEdit: () => void
+  onDelete: () => void
 }) {
   return (
-    <div className="flex items-center gap-4 p-4 bg-card rounded-lg border">
-      {isRecent && <Sparkles className="h-4 w-4 text-amber-500" />}
+    <div className="flex items-center gap-4 p-4 bg-card rounded-lg border hover:bg-muted/30 transition-colors">
+      {isRecent && <Sparkles className="h-4 w-4 text-amber-500 flex-shrink-0" />}
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{expense.description}</p>
         <p className="text-sm text-muted-foreground">
-          Paid by {expense.payerName} • {expense.dateLabel}
+          Paid by {expense.payerName} &bull; {expense.dateLabel}
         </p>
       </div>
-      <div className="flex items-center gap-2 text-right">
+      <div className="flex items-center gap-2 text-right flex-shrink-0">
         <span className="font-medium">{expense.paidLabel}</span>
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-xs whitespace-nowrap">
           Your share: {formatMoney(expense.yourShareCents)}
         </Badge>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-shrink-0">
         <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Edit expense">
           <Pencil className="h-4 w-4" />
         </Button>
@@ -53,40 +84,7 @@ function ExpenseRow({
         </Button>
       </div>
     </div>
-  );
-}
-
-function SettlementRow({
-  settlement,
-  members,
-  currentUserId,
-  onDelete,
-}: {
-  settlement: { fromUserId: string; toUserId: string; amountCents: number; createdAt: Date; id: string };
-  members: GroupView["members"];
-  currentUserId: string;
-  onDelete: () => void;
-}) {
-  const fromUser = members.find((m) => m.user.id === settlement.fromUserId);
-  const toUser = members.find((m) => m.user.id === settlement.toUserId);
-  const fromName = fromUser?.user.id === currentUserId ? "You" : fromUser?.user.name ?? "Unknown";
-  const toName = toUser?.user.id === currentUserId ? "You" : toUser?.user.name ?? "Unknown";
-
-  return (
-    <div className="flex items-center gap-4 p-4 bg-card rounded-lg border">
-      <HandCoins className="h-4 w-4 text-secondary" />
-      <div className="flex-1 min-w-0">
-        <p className="font-medium">{fromName} paid {toName}</p>
-        <p className="text-sm text-muted-foreground">{formatDate(settlement.createdAt)}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="font-medium text-secondary">{formatMoney(settlement.amountCents)}</span>
-        <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Delete settlement">
-          <Trash2 className="h-4 w-4 text-rose-500" />
-        </Button>
-      </div>
-    </div>
-  );
+  )
 }
 
 function DebtRow({
@@ -94,59 +92,47 @@ function DebtRow({
   members,
   currentUserId,
   isPending,
+  settleAction,
 }: {
-  debt: GroupView["debts"][0];
-  members: GroupView["members"];
-  currentUserId: string;
-  isPending: boolean;
+  debt: GroupView["debts"][0]
+  members: GroupView["members"]
+  currentUserId: string
+  isPending: boolean
+  settleAction: (fromUserId: string, toUserId: string, amountCents: number) => (formData: FormData) => Promise<SettleUpState>
 }) {
-  const fromUser = members.find((m) => m.user.id === debt.fromUserId);
-  const toUser = members.find((m) => m.user.id === debt.toUserId);
-  const fromName = fromUser?.user.id === currentUserId ? "You" : fromUser?.user.name ?? "Unknown";
-  const toName = toUser?.user.id === currentUserId ? "You" : toUser?.user.name ?? "Unknown";
-  const involvesCurrentUser = debt.fromUserId === currentUserId || debt.toUserId === currentUserId;
+  const fromUser = members.find((m) => m.user.id === debt.fromUserId)
+  const toUser = members.find((m) => m.user.id === debt.toUserId)
+  const fromName = fromUser?.user.id === currentUserId ? "You" : fromUser?.user.name ?? "Unknown"
+  const toName = toUser?.user.id === currentUserId ? "You" : toUser?.user.name ?? "Unknown"
+  const involvesCurrentUser = debt.fromUserId === currentUserId || debt.toUserId === currentUserId
 
   return (
-    <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
-      <div className="flex items-center gap-3">
-        <div className="flex -space-x-2">
-          <Avatar className="ring-2 ring-background">
+    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex -space-x-2 flex-shrink-0">
+          <Avatar className="ring-2 ring-background h-9 w-9">
             <AvatarImage src={fromUser?.user.imageUrl ?? undefined} alt={fromName} />
-            <AvatarFallback>{fromName[0]}</AvatarFallback>
+            <AvatarFallback className="text-sm font-medium">{fromName[0]}</AvatarFallback>
           </Avatar>
-          <Avatar className="ring-2 ring-background">
+          <Avatar className="ring-2 ring-background h-9 w-9">
             <AvatarImage src={toUser?.user.imageUrl ?? undefined} alt={toName} />
-            <AvatarFallback>{toName[0]}</AvatarFallback>
+            <AvatarFallback className="text-sm font-medium">{toName[0]}</AvatarFallback>
           </Avatar>
         </div>
-        <span className="text-sm font-medium">{fromName} → {toName}</span>
+        <span className="font-medium text-sm truncate">{fromName} pays {toName}</span>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="font-medium">{formatMoney(debt.amountCents)}</span>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <span className="font-medium text-lg tabular-nums">{formatMoney(debt.amountCents)}</span>
         {involvesCurrentUser && (
-          <form
-            action={async (formData: FormData) => {
-              "use server";
-              const { settleUp } = await import("@/app/actions/expenses");
-              const groupId = formData.get("groupId") as string;
-              const fromUserId = formData.get("fromUserId") as string;
-              const toUserId = formData.get("toUserId") as string;
-              const amountCents = Number(formData.get("amountCents"));
-              await settleUp(groupId, fromUserId, toUserId, amountCents);
-            }}
-          >
-            <input type="hidden" name="groupId" value={debt.fromUserId} />
-            <input type="hidden" name="fromUserId" value={debt.fromUserId} />
-            <input type="hidden" name="toUserId" value={debt.toUserId} />
-            <input type="hidden" name="amountCents" value={debt.amountCents.toString()} />
-            <Button type="submit" size="sm" disabled={isPending}>
+          <form action={settleAction(debt.fromUserId, debt.toUserId, debt.amountCents) as unknown as (formData: FormData) => Promise<void>}>
+            <Button type="submit" size="sm" disabled={isPending} className="whitespace-nowrap">
               {isPending ? "Settling..." : "Settle up"}
             </Button>
           </form>
         )}
       </div>
     </div>
-  );
+  )
 }
 
 function MemberRow({
@@ -154,14 +140,14 @@ function MemberRow({
   isCurrentUser,
   onRemove,
 }: {
-  member: GroupView["members"][0];
-  isCurrentUser: boolean;
-  onRemove: () => void;
+  member: GroupView["members"][0]
+  isCurrentUser: boolean
+  onRemove: () => void
 }) {
   return (
     <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
       <div className="flex items-center gap-3">
-        <Avatar>
+        <Avatar className="h-9 w-9">
           <AvatarImage src={member.user.imageUrl ?? undefined} alt={member.user.name} />
           <AvatarFallback>{member.user.name[0]}</AvatarFallback>
         </Avatar>
@@ -181,56 +167,61 @@ function MemberRow({
         )}
       </div>
     </div>
-  );
+  )
 }
 
 interface GroupClientProps {
-  groupView: GroupView;
-  groupId: string;
-  currentUserId: string;
+  groupView: GroupView
+  groupId: string
+  currentUserId: string
 }
 
 export default function GroupClient({ groupView, groupId, currentUserId }: GroupClientProps) {
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<GroupView["expenses"][0] | null>(null);
-  const [isAddMemberPending, startAddMemberTransition] = useTransition();
-  const [addMemberError, setAddMemberError] = useState("");
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<GroupView["expenses"][0] | null>(null)
+  const [isAddMemberPending, startAddMemberTransition] = useTransition()
+  const [addMemberError, setAddMemberError] = useState("")
+
+  const makeSettleAction = (fromUserId: string, toUserId: string, amountCents: number) => {
+    return async () => {
+      return settleUp(groupId, fromUserId, toUserId, amountCents)
+    }
+  }
 
   const handleAddExpense = () => {
-    setEditingExpense(null);
-    setIsExpenseModalOpen(true);
-  };
+    setEditingExpense(null)
+    setIsExpenseModalOpen(true)
+  }
 
   const handleEditExpense = (expense: GroupView["expenses"][0]) => {
-    setEditingExpense(expense);
-    setIsExpenseModalOpen(true);
-  };
+    setEditingExpense(expense)
+    setIsExpenseModalOpen(true)
+  }
 
   const handleExpenseSaved = () => {
-    setIsExpenseModalOpen(false);
-    setEditingExpense(null);
-  };
+    setIsExpenseModalOpen(false)
+    setEditingExpense(null)
+  }
 
   const handleAddMember = (formData: FormData) => {
     startAddMemberTransition(async () => {
-      const result = await addMember(groupId, { error: "" }, formData);
-      if (result.error) setAddMemberError(result.error);
-    });
-  };
-
-  const oneMinuteAgo = new Date(Date.now() - 60_000);
+      const result = await addMember(groupId, { error: "" }, formData)
+      if (result.error) setAddMemberError(result.error)
+    })
+  }
 
   return (
-    <div className="flex flex-col flex-1 w-full max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col flex-1 w-full max-w-6xl mx-auto px-4 py-8 md:py-12 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">{groupView.group.name}</h1>
           <p className="text-muted-foreground">{groupView.members.length} members</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Badge variant={groupView.yourBalanceCents >= 0 ? "success" : "warning"}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <Badge variant={groupView.yourBalanceCents >= 0 ? "success" : "warning"} className="text-lg px-4 py-2">
             {groupView.yourBalanceCents >= 0 ? "+" : ""}{formatBalance(groupView.yourBalanceCents)}
           </Badge>
+          <CurrencySelector selectedCurrency="USD" onChange={() => {}} />
         </div>
       </div>
 
@@ -251,7 +242,8 @@ export default function GroupClient({ groupView, groupId, currentUserId }: Group
                   .sort((a, b) => b.date.getTime() - a.date.getTime())
                   .map((item) => {
                     if (item.type === "expense") {
-                      const isRecent = new Date(item.data.dateLabel) > oneMinuteAgo;
+                      // eslint-disable-next-line react-hooks/purity
+                      const isRecent = new Date(item.data.dateLabel).getTime() > Date.now() - 60_000
                       return (
                         <ExpenseRow
                           key={item.data.id}
@@ -260,13 +252,13 @@ export default function GroupClient({ groupView, groupId, currentUserId }: Group
                           onEdit={() => handleEditExpense(item.data)}
                           onDelete={() => {}}
                         />
-                      );
+                      )
                     }
-                    return null;
+                    return null
                   })}
                 {groupView.expenses.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    No expenses yet. Click "Add expense" to get started.
+                    No expenses yet. Click &ldquo;Add expense&rdquo; to get started.
                   </div>
                 )}
               </ScrollArea>
@@ -288,6 +280,7 @@ export default function GroupClient({ groupView, groupId, currentUserId }: Group
                     members={groupView.members}
                     currentUserId={currentUserId}
                     isPending={false}
+                    settleAction={makeSettleAction}
                   />
                 ))
               )}
@@ -343,8 +336,8 @@ export default function GroupClient({ groupView, groupId, currentUserId }: Group
       <ExpenseModal
         isOpen={isExpenseModalOpen}
         onClose={() => {
-          setIsExpenseModalOpen(false);
-          setEditingExpense(null);
+          setIsExpenseModalOpen(false)
+          setEditingExpense(null)
         }}
         groupId={groupId}
         members={groupView.members}
@@ -353,5 +346,5 @@ export default function GroupClient({ groupView, groupId, currentUserId }: Group
         onSaved={handleExpenseSaved}
       />
     </div>
-  );
+  )
 }

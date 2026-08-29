@@ -2,7 +2,6 @@ import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import { getGroupView } from "@/lib/queries";
 import { ensureCurrentUser } from "@/lib/mock-db";
-import { GroupView } from "@/lib/types";
 import GroupClient from "@/components/group/group-client";
 
 export default async function GroupPage({ params }: { params: Promise<{ groupId: string }> }) {
@@ -10,7 +9,7 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
   if (!userId) notFound();
 
   const { groupId } = await params;
-  const user = await ensureCurrentUser();
+  await ensureCurrentUser();
   const groupView = getGroupView(groupId, userId);
 
   return (

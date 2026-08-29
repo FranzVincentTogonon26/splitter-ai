@@ -9,7 +9,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
+
+const CURRENCIES = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
+];
 
 function formatBalance(cents: number) {
   return formatMoney(Math.abs(cents));
@@ -28,9 +40,29 @@ function BalanceTile({ label, amount, variant }: { label: string; amount: number
   );
 }
 
+function CurrencySelector({ selectedCurrency, onChange }: { selectedCurrency: string; onChange: (currency: string) => void }) {
+  return (
+    <Select value={selectedCurrency} onValueChange={onChange}>
+      <SelectTrigger className="w-[160px]">
+        <SelectValue placeholder="Currency" />
+      </SelectTrigger>
+      <SelectContent>
+        {CURRENCIES.map((c) => (
+          <SelectItem key={c.code} value={c.code}>
+            <div className="flex items-center gap-2">
+              <span className="font-mono">{c.symbol}</span>
+              <span>{c.code}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function GroupCard({ group, yourBalanceCents, totalCents, members }: DashboardView["groups"][0]) {
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col h-full transition-shadow hover:shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{group.name}</CardTitle>
@@ -39,7 +71,7 @@ function GroupCard({ group, yourBalanceCents, totalCents, members }: DashboardVi
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 flex-1 flex flex-col">
         <div className="flex items-center gap-2 mb-4">
           {members.slice(0, 4).map((user) => (
             <Avatar key={user.id} className="ring-2 ring-background -ml-1 first:ml-0">
@@ -91,9 +123,10 @@ export default async function DashboardPage() {
   const dashboard = getDashboard(userId, firstName);
 
   return (
-    <div className="flex flex-col flex-1 w-full max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col flex-1 w-full max-w-6xl mx-auto px-4 py-8 md:py-12 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-semibold tracking-tight">Welcome, {firstName}</h1>
+        <CurrencySelector selectedCurrency="USD" onChange={() => {}} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -120,7 +153,7 @@ export default async function DashboardPage() {
                 <GroupCard {...group} />
               </Link>
             ))}
-            <Link href="/groups/new" className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-8 text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+            <Link href="/groups/new" className="flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-8 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors">
               <span className="text-3xl">+</span>
               <span className="font-medium">Create group</span>
             </Link>

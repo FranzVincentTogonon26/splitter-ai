@@ -10,9 +10,6 @@ import {
   getSplitsByGroup,
   getSettlementsByGroup,
   getUserById,
-  type Expense,
-  type ExpenseSplit,
-  type Settlement,
 } from "./mock-db";
 import type {
   DashboardView,
@@ -20,6 +17,9 @@ import type {
   ExpenseRow,
   GroupView,
   User,
+  Expense,
+  ExpenseSplit,
+  Settlement,
 } from "./types";
 
 function ledger(groupId: string): {

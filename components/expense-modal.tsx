@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,20 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
 import { addExpense } from "@/app/actions/expenses";
 import { formatMoney } from "@/lib/format";
 import { GroupView } from "@/lib/types";
-
-interface ExpenseModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  groupId: string;
-  members: GroupView["members"];
-  currentUserId: string;
-  editingExpense: GroupView["expenses"][0] | null;
-  onSaved: () => void;
-}
 
 const CURRENCIES = [
   { code: "USD", symbol: "$", name: "US Dollar" },
@@ -57,13 +46,20 @@ export function ExpenseModal({
   editingExpense,
   onSaved,
 }: ExpenseModalProps) {
-  const [description, setDescription] = React.useState("");
-  const [amount, setAmount] = React.useState("");
+  const [isPending, startTransition] = useTransition();
+
+  const initialDescription = editingExpense?.description ?? "";
+  const initialAmount = editingExpense ? (editingExpense.yourShareCents / 100).toString() : "";
+  const initialPaidBy = editingExpense
+    ? members.find((m) => m.user.name === editingExpense.payerName)?.user.id ?? currentUserId
+    : currentUserId;
+  const initialSelectedMembers = editingExpense ? members.map((m) => m.user.id) : members.map((m) => m.user.id);
+
+  const [description, setDescription] = React.useState(initialDescription);
+  const [amount, setAmount] = React.useState(initialAmount);
   const [currency, setCurrency] = React.useState("USD");
-  const [paidBy, setPaidBy] = React.useState(currentUserId);
-  const [selectedMembers, setSelectedMembers] = React.useState<string[]>(
-    members.map((m) => m.user.id)
-  );
+  const [paidBy, setPaidBy] = React.useState(initialPaidBy);
+  const [selectedMembers, setSelectedMembers] = React.useState<string[]>(initialSelectedMembers);
   const [splitMode, setSplitMode] = React.useState<"equal" | "percentage" | "exact">("equal");
   const [percentages, setPercentages] = React.useState<Record<string, number>>({});
   const [exactAmounts, setExactAmounts] = React.useState<Record<string, number>>({});
@@ -75,26 +71,6 @@ export function ExpenseModal({
     { error: "" }
   );
 
-  const isPending = state === "pending" || (typeof state === "object" && state !== null && "error" in state && !state.error);
-
-  React.useEffect(() => {
-    if (isOpen) {
-      if (editingExpense) {
-        setDescription(editingExpense.description);
-        setAmount((editingExpense.yourShareCents / 100).toString());
-        setPaidBy(members.find((m) => m.user.name === editingExpense.payerName)?.user.id ?? currentUserId);
-      } else {
-        setDescription("");
-        setAmount("");
-        setPaidBy(currentUserId);
-        setSelectedMembers(members.map((m) => m.user.id));
-        setSplitMode("equal");
-        setPercentages({});
-        setExactAmounts({});
-      }
-    }
-  }, [isOpen, editingExpense, members, currentUserId]);
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -102,7 +78,9 @@ export function ExpenseModal({
     formData.set("amount", amount);
     formData.set("paidBy", paidBy);
     selectedMembers.forEach((id) => formData.append("members", id));
-    formAction(formData);
+    startTransition(() => {
+      formAction(formData);
+    });
   };
 
   React.useEffect(() => {
@@ -131,15 +109,17 @@ export function ExpenseModal({
       (splitMode === "percentage" && totalPercentage === 100) ||
       (splitMode === "exact" && totalExact === totalAmount));
 
+  const currencySymbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? "$";
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} key={`${isOpen}-${editingExpense?.id ?? "new"}`}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editingExpense ? "Edit expense" : "Add expense"}</DialogTitle>
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-xl font-semibold">{editingExpense ? "Edit expense" : "Add expense"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="font-medium">Description</Label>
             <Input
               id="description"
               value={description}
@@ -151,7 +131,7 @@ export function ExpenseModal({
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount" className="font-medium">Amount</Label>
               <div className="flex gap-2">
                 <Select value={currency} onValueChange={setCurrency}>
                   <SelectTrigger>
@@ -160,7 +140,10 @@ export function ExpenseModal({
                   <SelectContent>
                     {CURRENCIES.map((c) => (
                       <SelectItem key={c.code} value={c.code}>
-                        {c.symbol} {c.code}
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono">{c.symbol}</span>
+                          <span>{c.code}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -179,7 +162,7 @@ export function ExpenseModal({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="paidBy">Paid by</Label>
+              <Label htmlFor="paidBy" className="font-medium">Paid by</Label>
               <Select value={paidBy} onValueChange={setPaidBy}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select payer" />
@@ -203,14 +186,14 @@ export function ExpenseModal({
 
           <Separator />
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Split between</Label>
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Label className="font-medium">Split between</Label>
               <div className="flex flex-wrap gap-2">
                 {members.map((member) => (
                   <label
                     key={member.user.id}
-                    className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-accent cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-accent cursor-pointer bg-muted/30"
                   >
                     <Checkbox
                       checked={selectedMembers.includes(member.user.id)}
@@ -224,15 +207,15 @@ export function ExpenseModal({
                       <AvatarImage src={member.user.imageUrl ?? undefined} alt={member.user.name} />
                       <AvatarFallback>{member.user.name[0]}</AvatarFallback>
                     </Avatar>
-                    <span>{member.user.name}</span>
+                    <span className="font-medium">{member.user.name}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Split mode</Label>
-              <div className="flex gap-4">
+            <div className="space-y-3">
+              <Label className="font-medium">Split mode</Label>
+              <div className="flex gap-2 flex-wrap">
                 {(["equal", "percentage", "exact"] as const).map((mode) => (
                   <label
                     key={mode}
@@ -246,9 +229,9 @@ export function ExpenseModal({
                       onChange={() => setSplitMode(mode)}
                       className="sr-only peer"
                     />
-                    <span className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+                    <span className={`px-4 py-2 rounded-md text-sm font-medium border transition-all ${
                       splitMode === mode
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
                         : "border-border hover:bg-accent"
                     }`}>
                       {mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -259,11 +242,12 @@ export function ExpenseModal({
             </div>
 
             {splitMode === "percentage" && (
-              <div className="space-y-2">
-                <Label>Percentages (must sum to 100%)</Label>
-                <div className="text-sm text-muted-foreground">
-                  Total: {totalPercentage}%
-                  {totalPercentage > 100 && <span className="text-rose-500 ml-2">(exceeds 100%)</span>}
+              <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <Label className="font-medium">Percentages (must sum to 100%)</Label>
+                  <span className={`text-sm font-mono tabular-nums ${totalPercentage > 100 ? "text-rose-500" : "text-muted-foreground"}`}>
+                    Total: {totalPercentage}%
+                  </span>
                 </div>
                 <div className="space-y-2">
                   {selectedMemberObjects.map((member) => (
@@ -272,7 +256,7 @@ export function ExpenseModal({
                         <AvatarImage src={member.user.imageUrl ?? undefined} alt={member.user.name} />
                         <AvatarFallback>{member.user.name[0]}</AvatarFallback>
                       </Avatar>
-                      <span className="w-32 font-medium">{member.user.name}</span>
+                      <span className="w-28 font-medium truncate">{member.user.name}</span>
                       <input
                         type="number"
                         min="0"
@@ -282,9 +266,9 @@ export function ExpenseModal({
                         onChange={(e) =>
                           setPercentages((prev) => ({ ...prev, [member.user.id]: Number(e.target.value) || 0 }))
                         }
-                        className="w-24 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        className="w-20 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 tabular-nums"
                       />
-                      <span>%</span>
+                      <span className="text-muted-foreground">%</span>
                     </div>
                   ))}
                 </div>
@@ -292,12 +276,12 @@ export function ExpenseModal({
             )}
 
             {splitMode === "exact" && (
-              <div className="space-y-2">
-                <Label>Exact amounts</Label>
-                <div className="text-sm text-muted-foreground">
-                  Total: {formatMoney(totalExact)} / {formatMoney(totalAmount)}
-                  {totalExact > totalAmount && <span className="text-rose-500 ml-2">(exceeds total)</span>}
-                  {totalExact < totalAmount && <span className="text-amber-500 ml-2">({formatMoney(totalAmount - totalExact)} left)</span>}
+              <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <Label className="font-medium">Exact amounts</Label>
+                  <span className="text-sm font-mono tabular-nums text-muted-foreground">
+                    {formatMoney(totalExact)} / {formatMoney(totalAmount)}
+                  </span>
                 </div>
                 <div className="space-y-2">
                   {selectedMemberObjects.map((member) => (
@@ -306,40 +290,50 @@ export function ExpenseModal({
                         <AvatarImage src={member.user.imageUrl ?? undefined} alt={member.user.name} />
                         <AvatarFallback>{member.user.name[0]}</AvatarFallback>
                       </Avatar>
-                      <span className="w-32 font-medium">{member.user.name}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={(exactAmounts[member.user.id] ?? 0) / 100}
-                        onChange={(e) =>
-                          setExactAmounts((prev) => ({
-                            ...prev,
-                            [member.user.id]: Math.round(Number(e.target.value) * 100) || 0,
-                          }))
-                        }
-                        className="w-24 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      />
-                      <span>{CURRENCIES.find((c) => c.code === currency)?.symbol ?? "$"}</span>
+                      <span className="w-28 font-medium truncate">{member.user.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground font-mono">{currencySymbol}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={(exactAmounts[member.user.id] ?? 0) / 100}
+                          onChange={(e) =>
+                            setExactAmounts((prev) => ({
+                              ...prev,
+                              [member.user.id]: Math.round(Number(e.target.value) * 100) || 0,
+                            }))
+                          }
+                          className="w-24 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 tabular-nums"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
+                {totalExact > totalAmount && (
+                  <p className="text-sm text-rose-500">Total exceeds expense amount</p>
+                )}
+                {totalExact < totalAmount && (
+                  <p className="text-sm text-amber-500">{formatMoney(totalAmount - totalExact)} left to assign</p>
+                )}
               </div>
             )}
 
             {splitMode === "equal" && memberCount > 0 && (
-              <div className="text-sm text-muted-foreground">
-                Each person pays: {formatMoney(equalShare)}
-                {remainder > 0 && <span> (first {remainder} person(s) pay 1¢ more)</span>}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground font-mono tabular-nums">
+                  Each person pays: {formatMoney(equalShare)}
+                  {remainder > 0 && <span className="font-normal"> (first {remainder} pay 1¢ more)</span>}
+                </p>
               </div>
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="border-t pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!canSubmit || isPending}>
+            <Button type="submit" disabled={!canSubmit || isPending} className="ml-auto">
               {isPending ? (editingExpense ? "Saving..." : "Adding...") : editingExpense ? "Save changes" : "Add expense"}
             </Button>
           </DialogFooter>
@@ -347,4 +341,14 @@ export function ExpenseModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+interface ExpenseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  groupId: string;
+  members: GroupView["members"];
+  currentUserId: string;
+  editingExpense: GroupView["expenses"][0] | null;
+  onSaved: () => void;
 }
