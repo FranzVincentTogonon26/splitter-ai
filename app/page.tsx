@@ -38,7 +38,7 @@ function DebtRow({
     <div
       key={`${from}-${to}`}
       className={`flex items-center justify-between p-3 rounded-lg transition-all ${
-        isAfter ? "bg-emerald-50 dark:bg-emerald-900/20" : "bg-muted/50"
+        isAfter ? "bg-emerald-50" : "bg-muted/50"
       }`}
     >
       <div className="flex items-center gap-3">

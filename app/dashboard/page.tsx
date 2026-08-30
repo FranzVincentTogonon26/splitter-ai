@@ -65,7 +65,7 @@ export default async function DashboardPage() {
         <Card>
           <CardContent className="p-6">
             <p className="text-muted-foreground">You are owed</p>
-            <p className="mt-2 text-3xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <p className="mt-2 text-3xl font-bold text-emerald-600 tabular-nums">
               {formatMoney(dashboard.totalOwedToYouCents)}
             </p>
           </CardContent>
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
         <Card>
           <CardContent className="p-6">
             <p className="text-muted-foreground">You owe</p>
-            <p className="mt-2 text-3xl font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+            <p className="mt-2 text-3xl font-bold text-rose-600 tabular-nums">
               {formatMoney(dashboard.totalYouOweCents)}
             </p>
           </CardContent>
