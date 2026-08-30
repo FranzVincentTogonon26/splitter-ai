@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { db } from "@/lib/db";
 import { netBalances } from "@/lib/queries";
+import { computeSplits, splitsFromFormData } from "@/lib/splits";
 
 export type AddExpenseState = { ok?: boolean; error?: string };
 
@@ -25,32 +26,21 @@ export async function addExpense(
   const description = String(formData.get("description") ?? "").trim();
   const amountCents = Math.round(Number(formData.get("amount")) * 100);
   const paidById = String(formData.get("paidBy") ?? "");
-  const splitIds = formData.getAll("members").map(String);
+  const { mode, memberIds: splitIds, percentages, exactCents } =
+    splitsFromFormData(formData);
 
   if (!description) return { error: "Enter a description" };
-  if (!Number.isFinite(amountCents) || amountCents <= 0) {
-    return { error: "Enter an amount greater than 0" };
-  }
   if (!memberIds.includes(paidById)) return { error: "Choose who paid" };
-  if (splitIds.length === 0) return { error: "Select at least one member" };
-  if (splitIds.some((id) => !memberIds.includes(id))) {
-    return { error: "Select at least one member" };
-  }
 
-  // Equal split with exact-sum reconciliation (flexible modes land in phase 06).
-  const unique = [...new Set(splitIds)];
-  if (unique.length !== splitIds.length) {
-    return { error: "Select each member once" };
-  }
-
-  const n = unique.length;
-  const base = Math.floor(amountCents / n);
-  let remainder = amountCents - base * n;
-  const splits = unique.map((memberId) => {
-    const share = remainder > 0 ? base + 1 : base;
-    remainder -= remainder > 0 ? 1 : 0;
-    return { userId: memberId, amountCents: share };
+  const result = computeSplits({
+    amountCents,
+    memberIds: splitIds,
+    allowedIds: memberIds,
+    mode,
+    percentages,
+    exactCents,
   });
+  if (!result.ok) return { error: result.error };
 
   await db.expense.create({
     data: {
@@ -58,7 +48,7 @@ export async function addExpense(
       paidById,
       description,
       amountCents,
-      splits: { create: splits },
+      splits: { create: result.splits },
     },
   });
 

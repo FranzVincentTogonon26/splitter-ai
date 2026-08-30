@@ -65,13 +65,15 @@ with pictures, not longer prompts:
 
 ## 06 Flexible Splits
 
-- [ ] Splitwise sentence: "Paid by [member] and split [equally | by
+- [x] Splitwise sentence: "Paid by [member] and split [equally | by
       percentages | by exact amounts]" as inline pill selects
-- [ ] Member include/exclude checkboxes with avatars
-- [ ] Per-mode inputs: live share preview (equal), % inputs summing to 100
+- [x] Member include/exclude checkboxes with avatars
+- [x] Per-mode inputs: live share preview (equal), % inputs summing to 100
       with running hint, exact amounts with left-to-assign hint
-- [ ] Save disabled until the math reconciles; server re-validates
-      (members only, no dupes, positive, sums exactly)
+- [x] Save disabled until the math reconciles; server re-validates
+      (members only, no dupes, positive, sums exactly) — `lib/splits.ts` is
+      the shared validation path `addExpense` and (phase 12) `updateExpense`
+      will both use; splits always sum exactly via largest-remainder math
 
 ## 07 Multi-Currency
 

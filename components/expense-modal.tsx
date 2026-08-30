@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatMoney } from "@/lib/format";
+import { equalSplits, type SplitMode } from "@/lib/splits";
 import type { GroupView } from "@/lib/types";
 
 // The 20 ECB currencies (phase 07 converts at save time via frankfurter.dev).
@@ -50,13 +51,42 @@ const CURRENCIES = [
   { code: "CZK", symbol: "Kč" },
 ];
 
-type SplitMode = "equal" | "percentage" | "exact";
-
 const SPLIT_MODES: { value: SplitMode; label: string }[] = [
   { value: "equal", label: "equally" },
   { value: "percentage", label: "by percentages" },
   { value: "exact", label: "by exact amounts" },
 ];
+
+/** Clamp raw keystrokes into a valid percentage value (0–100, 2 decimals). */
+function clampPercent(raw: string): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(100, Math.round(n * 100) / 100);
+}
+
+/**
+ * Prefill percentages from equal shares, quantized to 0.01% so the values sum
+ * to exactly 100.00 (naive rounding can drift to 99.99). Largest-remainder
+ * over 10000 units of 0.01%, ties broken by member order — mirrors the
+ * server's percentageSplits.
+ */
+function prefillPercentages(
+  amountCents: number,
+  ids: readonly string[],
+  shares: readonly number[],
+): Record<string, number> {
+  const weights =
+    amountCents > 0 ? shares.map((s) => s / amountCents) : ids.map(() => 1 / ids.length);
+  const units = weights.map((w) => Math.floor(w * 10_000));
+  let leftover = 10_000 - units.reduce((a, b) => a + b, 0);
+  const byRemainder = weights
+    .map((_, i) => i)
+    .sort((a, b) => (weights[b] * 10_000) % 1 - (weights[a] * 10_000) % 1);
+  for (let k = 0; leftover > 0; k++, leftover--) {
+    units[byRemainder[k % byRemainder.length]] += 1;
+  }
+  return Object.fromEntries(ids.map((id, i) => [id, units[i] / 100]));
+}
 
 export function ExpenseModal({
   isOpen,
@@ -104,7 +134,16 @@ export function ExpenseModal({
     formData.set("description", description);
     formData.set("amount", amount);
     formData.set("paidBy", paidBy);
-    selectedMembers.forEach((id) => formData.append("members", id));
+    formData.set("splitMode", splitMode);
+    // Display order: leftover cents land on the first rows in the list.
+    selectedMemberObjects.forEach((m) => {
+      formData.append("members", m.user.id);
+      formData.set(`percentage-${m.user.id}`, String(percentages[m.user.id] ?? 0));
+      formData.set(
+        `exact-${m.user.id}`,
+        String(exactAmounts[m.user.id] ?? 0),
+      );
+    });
     startTransition(() => {
       formAction(formData);
     });
@@ -129,21 +168,35 @@ export function ExpenseModal({
   );
   const memberCount = selectedMemberObjects.length;
 
+  // Live preview mirrors the server exactly: only SELECTED members count.
   const equalShare =
     memberCount > 0 ? Math.floor(totalAmount / memberCount) : 0;
   const remainder =
     memberCount > 0 ? totalAmount - equalShare * memberCount : 0;
 
-  const totalPercentage = Object.values(percentages).reduce((a, b) => a + b, 0);
-  const totalExact = Object.values(exactAmounts).reduce((a, b) => a + b, 0);
+  const selectedPercentages = selectedMemberObjects.map(
+    (m) => percentages[m.user.id] ?? 0,
+  );
+  const totalPercentage = selectedPercentages.reduce((a, b) => a + b, 0);
+  const selectedExact = selectedMemberObjects.map(
+    (m) => exactAmounts[m.user.id] ?? 0,
+  );
+  const totalExact = selectedExact.reduce((a, b) => a + b, 0);
+
+  const percentagesValid =
+    Math.abs(totalPercentage - 100) <= 1e-9 &&
+    selectedPercentages.every((p) => p >= 0 && p <= 100);
+
+  const exactsValid =
+    totalExact === totalAmount && selectedExact.every((a) => a >= 0);
 
   const canSubmit =
     Boolean(description.trim()) &&
     totalAmount > 0 &&
     memberCount > 0 &&
-    ((splitMode === "equal" && true) ||
-      (splitMode === "percentage" && totalPercentage === 100) ||
-      (splitMode === "exact" && totalExact === totalAmount));
+    (splitMode === "equal" ||
+      (splitMode === "percentage" && percentagesValid) ||
+      (splitMode === "exact" && exactsValid));
 
   const currencySymbol =
     CURRENCIES.find((c) => c.code === currency)?.symbol ?? "$";
@@ -250,7 +303,23 @@ export function ExpenseModal({
             and split
             <Select
               value={splitMode}
-              onValueChange={(v) => setSplitMode(v as SplitMode)}
+              onValueChange={(v) => {
+                const mode = v as SplitMode;
+                setSplitMode(mode);
+                // Splitwise-style: prefill from the current equal shares so
+                // the math always starts reconciled.
+                const ids = selectedMemberObjects.map((m) => m.user.id);
+                const shares = equalSplits(totalAmount, ids);
+                if (mode === "percentage") {
+                  setPercentages(prefillPercentages(totalAmount, ids, shares.map((s) => s.amountCents)));
+                } else if (mode === "exact") {
+                  setExactAmounts(
+                    Object.fromEntries(
+                      ids.map((id, i) => [id, shares[i].amountCents]),
+                    ),
+                  );
+                }
+              }}
             >
               <SelectTrigger className="w-auto gap-1 border-none bg-transparent px-1 shadow-none text-base font-semibold text-primary focus:ring-0 focus:ring-offset-0">
                 <SelectValue />
@@ -306,10 +375,12 @@ export function ExpenseModal({
                   className={`text-sm font-mono tabular-nums ${
                     totalPercentage > 100
                       ? "text-rose-500"
-                      : "text-muted-foreground"
+                      : totalPercentage < 100
+                        ? "text-amber-500"
+                        : "text-muted-foreground"
                   }`}
                 >
-                  {totalPercentage}% of 100%
+                  {Math.round(totalPercentage * 100) / 100}% of 100%
                 </span>
               </div>
               {selectedMemberObjects.map((member) => (
@@ -321,17 +392,25 @@ export function ExpenseModal({
                     type="number"
                     min="0"
                     max="100"
-                    step="1"
+                    step="0.01"
                     value={percentages[member.user.id] ?? 0}
                     onChange={(e) =>
                       setPercentages((prev) => ({
                         ...prev,
-                        [member.user.id]: Number(e.target.value) || 0,
+                        [member.user.id]: clampPercent(e.target.value),
                       }))
                     }
                     className="w-20 h-10 rounded-md border border-input bg-background px-3 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 tabular-nums"
                   />
                   <span className="text-muted-foreground">%</span>
+                  <span className="text-muted-foreground text-sm font-mono tabular-nums">
+                    {formatMoney(
+                      Math.round(
+                        (totalAmount * (percentages[member.user.id] ?? 0)) /
+                          100,
+                      ),
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
@@ -362,8 +441,10 @@ export function ExpenseModal({
                       onChange={(e) =>
                         setExactAmounts((prev) => ({
                           ...prev,
-                          [member.user.id]:
+                          [member.user.id]: Math.max(
+                            0,
                             Math.round(Number(e.target.value) * 100) || 0,
+                          ),
                         }))
                       }
                       className="w-24 h-10 rounded-md border border-input bg-background px-3 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 tabular-nums"
