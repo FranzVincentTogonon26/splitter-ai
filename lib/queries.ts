@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { formatDate } from "./format";
+import { formatDate, formatMoney, formatMoneyIn } from "./format";
 import {
   getExpensesByGroup,
   getGroupById,
@@ -136,6 +136,10 @@ export function getGroupView(groupId: string, userId: string): GroupView {
       payerName: nameFor(e.paidById),
       paidById: e.paidById,
       amountCents: e.amountCents,
+      paidLabel:
+        e.originalCurrency === "USD"
+          ? formatMoney(e.amountCents)
+          : `${formatMoneyIn(e.originalCurrency, e.originalAmountCents)} (≈ ${formatMoney(e.amountCents)})`,
       dateLabel: formatDate(e.createdAt),
       yourShareCents:
         allSplits.find((s) => s.expenseId === e.id && s.userId === userId)

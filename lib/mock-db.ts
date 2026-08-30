@@ -53,6 +53,8 @@ function seedDemoData(viewerId: string) {
     groupId: "grp_viareggio",
     paidById: viewerId,
     amountCents: 10248,
+    originalCurrency: "EUR",
+    originalAmountCents: 8900,
     description: "Lobster dinner",
     createdAt: new Date("2026-08-05T18:00:00"),
   };
@@ -61,6 +63,8 @@ function seedDemoData(viewerId: string) {
     groupId: "grp_viareggio",
     paidById: viewerId,
     amountCents: 5758,
+    originalCurrency: "EUR",
+    originalAmountCents: 5000,
     description: "Beach club",
     createdAt: new Date("2026-08-05T15:00:00"),
   };
@@ -69,6 +73,8 @@ function seedDemoData(viewerId: string) {
     groupId: "grp_viareggio",
     paidById: ANKITA.id,
     amountCents: 7002,
+    originalCurrency: "USD",
+    originalAmountCents: 7002,
     description: "dinner",
     createdAt: new Date("2026-08-05T12:00:00"),
   };
@@ -77,6 +83,8 @@ function seedDemoData(viewerId: string) {
     groupId: "grp_amalfi",
     paidById: viewerId,
     amountCents: 6800,
+    originalCurrency: "USD",
+    originalAmountCents: 6800,
     description: "Boat day",
     createdAt: new Date("2026-07-20T10:00:00"),
   };
@@ -196,6 +204,8 @@ export function insertEqualExpense(input: {
     groupId: input.groupId,
     paidById: input.paidById,
     amountCents: input.amountCents,
+    originalCurrency: "USD",
+    originalAmountCents: input.amountCents,
     description: input.description,
     createdAt: new Date(),
   };

@@ -23,6 +23,8 @@ export type Expense = {
   groupId: string;
   paidById: string;
   amountCents: number;
+  originalCurrency: string;
+  originalAmountCents: number;
   description: string;
   createdAt: Date;
 };
@@ -67,6 +69,7 @@ export type ExpenseRow = {
   payerName: string;
   paidById: string;
   amountCents: number;
+  paidLabel: string;
   dateLabel: string;
   yourShareCents: number;
   isRecent: boolean;

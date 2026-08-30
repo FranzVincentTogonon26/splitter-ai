@@ -33,8 +33,7 @@ function ExpenseRow({
       <div className="flex-1 min-w-0">
         <p className="font-semibold truncate">{expense.description}</p>
         <p className="text-muted-foreground">
-          {expense.payerName} paid {formatMoney(expense.amountCents)} ·{" "}
-          {expense.dateLabel}
+          {expense.payerName} paid {expense.paidLabel} · {expense.dateLabel}
         </p>
       </div>
       <p className="text-muted-foreground whitespace-nowrap">
@@ -73,8 +72,8 @@ function SettleButton({
   return (
     <Button
       type="button"
-      variant="outline"
       size="sm"
+      className="border-0 bg-muted text-foreground hover:bg-muted/70"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
@@ -234,13 +233,15 @@ export default function GroupClient({
             )}
           </section>
 
+          <hr className="border-border" />
+
           <section className="space-y-4">
             <SectionHeading>Members</SectionHeading>
-            <div className="rounded-xl border divide-y">
+            <div>
               {groupView.members.map((member) => (
                 <div
                   key={member.user.id}
-                  className="flex items-center gap-3 px-5 py-4"
+                  className="flex items-center gap-3 py-3"
                 >
                   <Avatar className="h-9 w-9">
                     <AvatarImage
@@ -261,14 +262,14 @@ export default function GroupClient({
               ))}
             </div>
 
-            <form action={handleAddMember} className="flex items-start gap-3">
+            <form action={handleAddMember} className="flex items-center gap-3 pt-2">
               <div className="flex-1 min-w-0">
                 <input
                   name="email"
                   type="email"
                   placeholder="friend@example.com"
                   required
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  className="w-full h-10 border-0 bg-transparent px-1 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-0"
                 />
                 {addMemberError && (
                   <p className="mt-1 text-sm text-rose-500">{addMemberError}</p>
@@ -276,7 +277,7 @@ export default function GroupClient({
               </div>
               <Button
                 type="submit"
-                variant="outline"
+                className="border-0 bg-muted text-foreground hover:bg-muted/70"
                 disabled={isAddMemberPending}
               >
                 {isAddMemberPending ? "Adding..." : "Add member"}
