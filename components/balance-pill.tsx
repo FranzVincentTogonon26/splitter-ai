@@ -18,9 +18,9 @@ export function BalancePill({
         settled &&
           "border-transparent bg-secondary text-secondary-foreground",
         owedToYou &&
-          "border-emerald-500/40 bg-emerald-500/10 text-emerald-600",
+          "border-emerald-500/50 bg-background text-emerald-600",
         !settled && !owedToYou &&
-          "border-rose-500/40 bg-rose-500/10 text-rose-600",
+          "border-rose-500/50 bg-background text-rose-600",
         className,
       )}
     >

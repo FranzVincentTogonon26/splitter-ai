@@ -15,7 +15,7 @@ import type { DashboardGroupCard } from "@/lib/types";
 
 function GroupCard({ card }: { card: DashboardGroupCard }) {
   return (
-    <Card className="h-full transition-shadow hover:shadow-md">
+    <Card className="h-full rounded-xl transition-shadow hover:shadow-md">
       <CardContent className="flex flex-col gap-6 p-6">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-xl font-bold truncate">{card.group.name}</h3>
@@ -61,19 +61,19 @@ export default async function DashboardPage() {
         <CurrencySelect />
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 max-w-xl">
-        <Card>
+      <div className="mt-8 grid grid-cols-2 gap-4 max-w-[480px]">
+        <Card className="rounded-xl">
           <CardContent className="p-6">
-            <p className="text-muted-foreground">You are owed</p>
-            <p className="mt-2 text-3xl font-bold text-emerald-600 tabular-nums">
+            <p className="text-lg text-muted-foreground">You are owed</p>
+            <p className="mt-2 text-3xl font-semibold text-emerald-600 tabular-nums">
               {formatMoney(dashboard.totalOwedToYouCents)}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-xl">
           <CardContent className="p-6">
-            <p className="text-muted-foreground">You owe</p>
-            <p className="mt-2 text-3xl font-bold text-rose-600 tabular-nums">
+            <p className="text-lg text-muted-foreground">You owe</p>
+            <p className="mt-2 text-3xl font-semibold text-rose-600 tabular-nums">
               {formatMoney(dashboard.totalYouOweCents)}
             </p>
           </CardContent>
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
             type="text"
             placeholder="New group name..."
             required
-            className="h-10 w-48 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="h-10 w-52 border-0 bg-transparent px-1 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-0"
           />
           <Button type="submit">Create group</Button>
         </form>

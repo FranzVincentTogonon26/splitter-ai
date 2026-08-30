@@ -38,8 +38,16 @@ const features = [
 ];
 
 const steps = [
-  { number: "1", title: "Create a group", description: "Invite friends by email." },
-  { number: "2", title: "Add expenses", description: "Any currency, any split." },
+  {
+    number: "1",
+    title: "Create a group",
+    description: "Invite friends by email.",
+  },
+  {
+    number: "2",
+    title: "Add expenses",
+    description: "Any currency, any split.",
+  },
   { number: "3", title: "Settle up", description: "Fewest possible payments." },
 ];
 
@@ -62,8 +70,8 @@ function CurrencyGlyphs() {
           key={i}
           className="absolute text-5xl font-mono text-primary/10 animate-float"
           style={{
-            left: `${8 + (i * 17) % 84}%`,
-            top: `${(i * 19) % 90}%`,
+            left: `${15 + ((i * 17) % 84)}%`,
+            top: `${(i * 5) % 100}%`,
             animationDelay: `${i * 0.6}s`,
             animationDuration: `${16 + i * 2}s`,
           }}
@@ -121,8 +129,8 @@ export default function Home() {
       <section className="max-w-5xl mx-auto w-full px-6 py-12 md:py-16 relative z-10">
         <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-4">
           <div className="w-full max-w-md -rotate-1 hover:rotate-0 transition-transform">
-            <div className="rounded-xl border bg-card shadow-sm">
-              <div className="flex items-center justify-between px-5 py-4 border-b">
+            <div className="rounded-xl border bg-card shadow-sm border-border">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <h2 className="font-bold">After the trip</h2>
                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
                   5 IOUs
@@ -132,7 +140,7 @@ export default function Home() {
                 {ious.map((d, i) => (
                   <div
                     key={`${d.from}-${d.to}-${i}`}
-                    className="flex items-center gap-3 px-5 py-3.5"
+                    className="flex items-center gap-3 px-5 py-3.5 border-border"
                   >
                     <Initial name={d.from} />
                     <p className="flex-1 text-sm">
@@ -155,8 +163,8 @@ export default function Home() {
           />
 
           <div className="w-full max-w-sm rotate-1 hover:rotate-0 transition-transform">
-            <div className="rounded-xl border bg-card shadow-sm">
-              <div className="flex items-center justify-between px-5 py-4 border-b">
+            <div className="rounded-xl border bg-card shadow-sm border-border">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <h2 className="font-bold">With Splitter</h2>
                 <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
                   2 payments
@@ -166,7 +174,7 @@ export default function Home() {
                 {settled.map((d) => (
                   <div
                     key={`${d.from}-${d.to}`}
-                    className="flex items-center gap-3 px-5 py-3.5"
+                    className="flex items-center gap-3 px-5 py-3.5 border-border"
                   >
                     <Initial name={d.from} />
                     <p className="flex-1 text-sm">
@@ -195,7 +203,10 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid md:grid-cols-3 gap-6">
             {features.map((f) => (
-              <div key={f.title} className="rounded-xl border bg-card p-6">
+              <div
+                key={f.title}
+                className="rounded-xl border bg-card p-6 border-border"
+              >
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                   <f.icon className="h-5 w-5 text-primary" aria-hidden />
                 </span>
@@ -245,4 +256,3 @@ export default function Home() {
     </div>
   );
 }
-
