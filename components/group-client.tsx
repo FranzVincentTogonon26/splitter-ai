@@ -179,7 +179,9 @@ export default function GroupClient({
                     src={member.user.imageUrl ?? undefined}
                     alt={member.user.name}
                   />
-                  <AvatarFallback>{member.user.name[0]}</AvatarFallback>
+                  <AvatarFallback seed={member.user.id}>
+                    {member.user.name[0]}
+                  </AvatarFallback>
                 </Avatar>
               ))}
             </div>
@@ -245,7 +247,9 @@ export default function GroupClient({
                       src={member.user.imageUrl ?? undefined}
                       alt={member.user.name}
                     />
-                    <AvatarFallback>{member.user.name[0]}</AvatarFallback>
+                    <AvatarFallback seed={member.user.id}>
+                      {member.user.name[0]}
+                    </AvatarFallback>
                   </Avatar>
                   <p className="font-semibold truncate">
                     {member.user.id === currentUserId ? "You" : member.user.name}

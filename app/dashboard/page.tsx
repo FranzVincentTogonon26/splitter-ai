@@ -26,7 +26,7 @@ function GroupCard({ card }: { card: DashboardGroupCard }) {
             {card.members.slice(0, 5).map((user) => (
               <Avatar key={user.id} className="h-9 w-9 ring-2 ring-background">
                 <AvatarImage src={user.imageUrl ?? undefined} alt={user.name} />
-                <AvatarFallback>{user.name[0]}</AvatarFallback>
+                <AvatarFallback seed={user.id}>{user.name[0]}</AvatarFallback>
               </Avatar>
             ))}
             {card.members.length > 5 && (

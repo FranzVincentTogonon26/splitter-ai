@@ -271,7 +271,9 @@ export function ExpenseModal({
                     src={member.user.imageUrl ?? undefined}
                     alt={member.user.name}
                   />
-                  <AvatarFallback>{member.user.name[0]}</AvatarFallback>
+                  <AvatarFallback seed={member.user.id}>
+                    {member.user.name[0]}
+                  </AvatarFallback>
                 </Avatar>
                 <span className="font-medium">
                   {member.user.name}
