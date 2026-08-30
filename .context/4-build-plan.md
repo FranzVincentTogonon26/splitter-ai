@@ -49,10 +49,10 @@ with pictures, not longer prompts:
 
 ## 04 Debt Simplification
 
-- [ ] `lib/balances.ts`: net balance per member from expenses ± settlements
-- [ ] `lib/simplify-debts.ts`: greedy largest-debtor ↔ largest-creditor
+- [x] `lib/balances.ts`: net balance per member from expenses ± settlements
+- [x] `lib/simplify-debts.ts`: greedy largest-debtor ↔ largest-creditor
       matching; any group settles in ≤ n−1 payments; fuzz-tested
-- [ ] Group page shows the minimized list, not the raw pairwise ledger
+- [x] Group page shows the minimized list, not the raw pairwise ledger
 
 ## 05 Webhook User Sync
 

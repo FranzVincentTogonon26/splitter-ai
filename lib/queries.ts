@@ -2,11 +2,12 @@ import { notFound } from "next/navigation";
 import type { Group } from "@prisma/client";
 
 import { db } from "@/lib/db";
+import { balancesFromLedger } from "./balances";
 import { formatDate, formatMoney } from "./format";
+import { simplifyDebts } from "./simplify-debts";
 import type {
   DashboardGroupCard,
   DashboardView,
-  DebtRow,
   ExpenseRow,
   GroupView,
   MemberRow,
@@ -26,49 +27,11 @@ export async function netBalances(groupId: string): Promise<Map<string, number>>
     db.groupMember.findMany({ where: { groupId } }),
   ]);
 
-  const balances = new Map<string, number>();
-  for (const m of members) balances.set(m.userId, 0);
-
-  for (const e of expenses) {
-    balances.set(e.paidById, (balances.get(e.paidById) ?? 0) + e.amountCents);
-    for (const s of e.splits) {
-      balances.set(s.userId, (balances.get(s.userId) ?? 0) - s.amountCents);
-    }
-  }
-  for (const st of settlements) {
-    balances.set(
-      st.fromUserId,
-      (balances.get(st.fromUserId) ?? 0) + st.amountCents,
-    );
-    balances.set(st.toUserId, (balances.get(st.toUserId) ?? 0) - st.amountCents);
-  }
-  return balances;
-}
-
-function simplifyDebts(balances: Map<string, number>): DebtRow[] {
-  const debtors = [...balances.entries()]
-    .filter(([, v]) => v < 0)
-    .map(([id, v]) => ({ id, cents: -v }));
-  const creditors = [...balances.entries()]
-    .filter(([, v]) => v > 0)
-    .map(([id, v]) => ({ id, cents: v }));
-
-  const debts: DebtRow[] = [];
-  let di = 0;
-  let ci = 0;
-  while (di < debtors.length && ci < creditors.length) {
-    const amount = Math.min(debtors[di].cents, creditors[ci].cents);
-    debts.push({
-      fromUserId: debtors[di].id,
-      toUserId: creditors[ci].id,
-      amountCents: amount,
-    });
-    debtors[di].cents -= amount;
-    creditors[ci].cents -= amount;
-    if (debtors[di].cents === 0) di++;
-    if (creditors[ci].cents === 0) ci++;
-  }
-  return debts;
+  return balancesFromLedger(
+    members.map((m) => m.userId),
+    expenses,
+    settlements,
+  );
 }
 
 async function groupCard(

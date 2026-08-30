@@ -279,7 +279,7 @@ export default function GroupClient({
                   type="email"
                   placeholder="friend@example.com"
                   required
-                  className="w-full h-10 border-0 bg-transparent px-1 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-0"
+                  className="w-full px-4 py-2 text-sm rounded-lg border border-border bg-transparent  text-base placeholder:text-muted-foreground focus:outline-none focus:ring-0"
                 />
                 {addMemberError && (
                   <p className="mt-1 text-sm text-rose-500">{addMemberError}</p>
