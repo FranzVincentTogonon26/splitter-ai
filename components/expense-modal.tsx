@@ -86,9 +86,9 @@ export function ExpenseModal({
   const [percentages, setPercentages] = React.useState<Record<string, number>>(
     {},
   );
-  const [exactAmounts, setExactAmounts] = React.useState<Record<string, number>>(
-    {},
-  );
+  const [exactAmounts, setExactAmounts] = React.useState<
+    Record<string, number>
+  >({});
   const [aiText, setAiText] = React.useState("");
 
   const [state, formAction] = React.useActionState(
@@ -111,7 +111,12 @@ export function ExpenseModal({
   };
 
   React.useEffect(() => {
-    if (typeof state === "object" && state !== null && "ok" in state && state.ok) {
+    if (
+      typeof state === "object" &&
+      state !== null &&
+      "ok" in state &&
+      state.ok
+    ) {
       onSaved();
     }
   }, [state, onSaved]);
@@ -124,7 +129,8 @@ export function ExpenseModal({
   );
   const memberCount = selectedMemberObjects.length;
 
-  const equalShare = memberCount > 0 ? Math.floor(totalAmount / memberCount) : 0;
+  const equalShare =
+    memberCount > 0 ? Math.floor(totalAmount / memberCount) : 0;
   const remainder =
     memberCount > 0 ? totalAmount - equalShare * memberCount : 0;
 
@@ -181,7 +187,7 @@ export function ExpenseModal({
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor="description" className="text-base font-semibold">
               Description
             </Label>
@@ -191,11 +197,11 @@ export function ExpenseModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Dinner at the beach shack"
               required
-              className="h-11 border-0 bg-transparent px-1 text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-0"
+              className="font-normal border-border p-2  bg-transparent placeholder:text-muted-foreground focus:outline-none focus:ring-0"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-4">
             <Label htmlFor="amount" className="text-base font-semibold">
               Amount
             </Label>
@@ -209,13 +215,13 @@ export function ExpenseModal({
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 required
-                className="h-11 flex-1 border-0 bg-transparent px-1 text-lg focus:outline-none focus:ring-0"
+                className="flex-1  border-border p-2 bg-transparent  focus:outline-none focus:ring-0"
               />
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-24 gap-1 border-0 bg-transparent px-1 shadow-none text-lg font-semibold focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="w-24 gap-1 border-border bg-transparent px-1 shadow-none font-semibold focus:ring-0 focus:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border-border">
                   {CURRENCIES.map((c) => (
                     <SelectItem key={c.code} value={c.code}>
                       {c.code} <span className="font-mono">{c.symbol}</span>
@@ -232,7 +238,7 @@ export function ExpenseModal({
               <SelectTrigger className="w-auto gap-1 border-none bg-transparent px-1 shadow-none text-base font-semibold text-primary focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder="Select payer" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-border">
                 {members.map((m) => (
                   <SelectItem key={m.user.id} value={m.user.id}>
                     {m.user.name}
@@ -249,7 +255,7 @@ export function ExpenseModal({
               <SelectTrigger className="w-auto gap-1 border-none bg-transparent px-1 shadow-none text-base font-semibold text-primary focus:ring-0 focus:ring-offset-0">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-border">
                 {SPLIT_MODES.map((mode) => (
                   <SelectItem key={mode.value} value={mode.value}>
                     {mode.label}
@@ -259,11 +265,11 @@ export function ExpenseModal({
             </Select>
           </p>
 
-          <div className="rounded-xl border divide-y">
+          <div className="rounded-xl border border-border divide-y">
             {members.map((member) => (
               <label
                 key={member.user.id}
-                className="flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors"
+                className="flex items-center border-border gap-3 px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors"
               >
                 <Checkbox
                   checked={selectedMembers.includes(member.user.id)}
@@ -392,7 +398,7 @@ export function ExpenseModal({
               <p className="text-sm text-rose-500">{state.error}</p>
             )}
 
-          <DialogFooter className="border-t pt-4">
+          <DialogFooter className="mt-6 -mx-6 -mb-6 rounded-b-lg bg-muted px-6 py-4">
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
@@ -404,11 +410,8 @@ export function ExpenseModal({
                   : "Save expense"}
             </Button>
           </DialogFooter>
-
-
         </form>
       </DialogContent>
-
     </Dialog>
   );
 }
