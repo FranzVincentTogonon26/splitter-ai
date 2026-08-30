@@ -9,11 +9,19 @@ import type {
   User,
 } from "./types";
 
+// Demo avatars: a stable random photo per user id, so the UI doesn't rely on
+// Clerk images during the mock phase. The colored-initial fallback still shows
+// if the network image fails. Removed in phase 03 when Prisma + the Clerk
+// webhook sync real images.
+export function demoAvatarUrl(id: string): string {
+  return `https://i.pravatar.cc/150?u=${encodeURIComponent(id)}`;
+}
+
 const ANKITA: User = {
   id: "user_mock_ankita",
   email: "itskulkarniankita@example.com",
   name: "Ankita Kulkarni",
-  imageUrl: null,
+  imageUrl: demoAvatarUrl("user_mock_ankita"),
 };
 
 const users: User[] = [ANKITA];
@@ -114,10 +122,11 @@ export async function ensureCurrentUser(): Promise<User> {
       id: cu.id,
       email: cu.primaryEmailAddress?.emailAddress ?? "unknown@example.com",
       name: cu.fullName ?? cu.firstName ?? "You",
-      imageUrl: cu.imageUrl ?? null,
+      imageUrl: cu.imageUrl ?? demoAvatarUrl(cu.id),
     };
     users.push(user);
   }
+  if (user.imageUrl === null) user.imageUrl = demoAvatarUrl(user.id);
   if (seededForUserId !== user.id) seedDemoData(user.id);
   return user;
 }

@@ -15,7 +15,7 @@ import type { DashboardGroupCard } from "@/lib/types";
 
 function GroupCard({ card }: { card: DashboardGroupCard }) {
   return (
-    <Card className="h-full rounded-xl transition-shadow hover:shadow-md border border-border">
+    <Card className="h-full rounded-xl hover:shadow-md border border-border">
       <CardContent className="flex flex-col gap-6 p-6">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-xl font-bold truncate">{card.group.name}</h3>
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-8 grid grid-cols-2 gap-4 max-w-[480px]">
-        <Card className="rounded-xl border border-border">
+        <Card className="rounded-xl  border border-border">
           <CardContent className="p-6">
             <p className="text-lg text-muted-foreground">You are owed</p>
             <p className="mt-2 text-3xl font-semibold text-emerald-600 tabular-nums">
