@@ -15,13 +15,29 @@ const Avatar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElem
 Avatar.displayName = "Avatar";
 
 const AvatarImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<HTMLImageElement>>(
-  ({ className, ...props }, ref) => (
-    <img
-      ref={ref}
-      className={cn("aspect-square h-full w-full", className)}
-      {...props}
-    />
-  )
+  ({ className, alt = "", ...props }, ref) => {
+    const [status, setStatus] = React.useState<"loading" | "loaded" | "error">(
+      props.src ? "loading" : "error",
+    );
+
+    // No image (or failed load) renders nothing, so the fallback shows.
+    if (!props.src || status === "error") return null;
+
+    return (
+      <img
+        ref={ref}
+        alt={alt}
+        {...props}
+        className={cn(
+          "aspect-square h-full w-full object-cover transition-opacity",
+          status === "loaded" ? "opacity-100" : "opacity-0",
+          className,
+        )}
+        onLoad={() => setStatus("loaded")}
+        onError={() => setStatus("error")}
+      />
+    );
+  }
 );
 AvatarImage.displayName = "AvatarImage";
 
@@ -29,7 +45,10 @@ const AvatarFallback = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTM
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("flex h-full w-full items-center justify-center rounded-full bg-muted", className)}
+      className={cn(
+        "absolute inset-0 flex h-full w-full items-center justify-center rounded-full bg-muted",
+        className,
+      )}
       {...props}
     />
   )
