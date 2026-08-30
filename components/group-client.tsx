@@ -26,7 +26,7 @@ function ExpenseRow({
   onEdit: () => void;
 }) {
   return (
-    <div className="flex items-center gap-4 px-5 py-4">
+    <div className="flex items-center gap-4 px-5 py-4  border-border">
       {expense.isRecent && (
         <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden />
       )}
@@ -48,7 +48,12 @@ function ExpenseRow({
         >
           <Pencil className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" disabled aria-label="Delete expense">
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled
+          aria-label="Delete expense"
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
@@ -201,7 +206,7 @@ export default function GroupClient({
           {groupView.expenses.length === 0 ? (
             <p className="text-muted-foreground">No expenses yet</p>
           ) : (
-            <div className="rounded-xl border divide-y">
+            <div className="rounded-xl border divide-y border-border">
               {groupView.expenses.map((expense) => (
                 <ExpenseRow
                   key={expense.id}
@@ -219,7 +224,7 @@ export default function GroupClient({
             {groupView.debts.length === 0 ? (
               <p className="text-muted-foreground">All settled up!</p>
             ) : (
-              <div className="rounded-xl border divide-y">
+              <div className="rounded-xl border divide-y border border-border">
                 {groupView.debts.map((debt) => (
                   <DebtRow
                     key={`${debt.fromUserId}-${debt.toUserId}`}
@@ -253,7 +258,9 @@ export default function GroupClient({
                     </AvatarFallback>
                   </Avatar>
                   <p className="font-semibold truncate">
-                    {member.user.id === currentUserId ? "You" : member.user.name}
+                    {member.user.id === currentUserId
+                      ? "You"
+                      : member.user.name}
                   </p>
                   <p className="ml-auto text-muted-foreground truncate">
                     {member.user.email}
@@ -262,7 +269,10 @@ export default function GroupClient({
               ))}
             </div>
 
-            <form action={handleAddMember} className="flex items-center gap-3 pt-2">
+            <form
+              action={handleAddMember}
+              className="flex items-center gap-3 pt-2"
+            >
               <div className="flex-1 min-w-0">
                 <input
                   name="email"

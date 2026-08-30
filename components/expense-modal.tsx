@@ -150,7 +150,7 @@ export function ExpenseModal({
       }}
       key={`${isOpen}-${editingExpense?.id ?? "new"}`}
     >
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             {editingExpense ? "Edit expense" : "Add an expense"}
@@ -168,9 +168,13 @@ export function ExpenseModal({
                   value={aiText}
                   onChange={(e) => setAiText(e.target.value)}
                   placeholder={'e.g. "dinner in Tokyo 4500 yen"'}
-                  className="border-primary/40"
+                  className="border-2 border-primary/50 bg-background focus-visible:ring-primary/20"
                 />
-                <Button type="button" variant="outline" disabled>
+                <Button
+                  type="button"
+                  className="border-0 bg-muted text-muted-foreground hover:bg-muted/70"
+                  disabled
+                >
                   Parse
                 </Button>
               </div>
@@ -178,19 +182,24 @@ export function ExpenseModal({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-base font-semibold">
+              Description
+            </Label>
             <Input
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Dinner at the beach shack"
               required
+              className="h-11 border-0 bg-transparent px-1 text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-0"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
-            <div className="flex gap-2">
+            <Label htmlFor="amount" className="text-base font-semibold">
+              Amount
+            </Label>
+            <div className="flex items-center gap-2">
               <Input
                 id="amount"
                 type="number"
@@ -200,10 +209,10 @@ export function ExpenseModal({
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 required
-                className="flex-1"
+                className="h-11 flex-1 border-0 bg-transparent px-1 text-lg focus:outline-none focus:ring-0"
               />
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-28">
+                <SelectTrigger className="w-24 gap-1 border-0 bg-transparent px-1 shadow-none text-lg font-semibold focus:ring-0 focus:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -254,7 +263,7 @@ export function ExpenseModal({
             {members.map((member) => (
               <label
                 key={member.user.id}
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/40 transition-colors"
+                className="flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors"
               >
                 <Checkbox
                   checked={selectedMembers.includes(member.user.id)}
@@ -266,7 +275,7 @@ export function ExpenseModal({
                     )
                   }
                 />
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-9 w-9">
                   <AvatarImage
                     src={member.user.imageUrl ?? undefined}
                     alt={member.user.name}
