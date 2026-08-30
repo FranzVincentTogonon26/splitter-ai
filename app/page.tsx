@@ -1,157 +1,71 @@
-import { SignUpButton, Show } from "@clerk/nextjs";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SignUpButton, Show } from "@clerk/nextjs";
+import { ArrowRight, Globe, Percent, Zap } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRight, CreditCard, Globe, Zap, Check, ChevronRight } from "lucide-react";
 
-const debtsBefore = [
-  { from: "You", to: "Alex", amount: 45.0 },
-  { from: "You", to: "Sam", amount: 32.5 },
-  { from: "You", to: "Jordan", amount: 28.0 },
-  { from: "You", to: "Taylor", amount: 19.75 },
-  { from: "Sam", to: "Alex", amount: 15.0 },
+const ious = [
+  { from: "Maya", to: "Ben", amount: 10 },
+  { from: "Ben", to: "Priya", amount: 16 },
+  { from: "Sam", to: "Priya", amount: 6 },
+  { from: "Maya", to: "Priya", amount: 8 },
+  { from: "Sam", to: "Ben", amount: 6 },
 ];
 
-const debtsAfter = [
-  { from: "You", to: "Alex", amount: 85.25 },
-  { from: "Sam", to: "Taylor", amount: 17.5 },
+const settled = [
+  { from: "Maya", to: "Priya", amount: 18 },
+  { from: "Sam", to: "Priya", amount: 12 },
 ];
 
-const currencyGlyphs = ["$", "€", "¥", "£", "₹", "₩", "C$", "A$", "CHF", "HK$"];
+const glyphs = ["¥", "£", "€", "$", "₹", "¥"];
 
-function DebtRow({
-  from,
-  to,
-  amount,
-  showCheck = false,
-  isAfter = false,
-}: {
-  from: string;
-  to: string;
-  amount: number;
-  showCheck?: boolean;
-  isAfter?: boolean;
-}) {
-  return (
-    <div
-      key={`${from}-${to}`}
-      className={`flex items-center justify-between p-3 rounded-lg transition-all ${
-        isAfter ? "bg-emerald-50" : "bg-muted/50"
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="text-xs font-medium">{from[0]}</AvatarFallback>
-        </Avatar>
-        <span className="font-medium text-sm">{from}</span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="text-xs font-medium">{to[0]}</AvatarFallback>
-        </Avatar>
-        <span className="font-medium text-sm">{to}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <Badge
-          variant={isAfter ? "success" : "outline"}
-          className="text-xs font-medium"
-        >
-          ${amount.toFixed(2)}
-        </Badge>
-        {showCheck && <Check className="h-4 w-4 text-emerald-500" />}
-      </div>
-    </div>
-  );
-}
+const features = [
+  {
+    icon: Percent,
+    title: "Split any way",
+    description: "Equally, by percentages, or exact amounts.",
+  },
+  {
+    icon: Globe,
+    title: "Any currency",
+    description: "¥, €, ₹ and $ in one group.",
+  },
+  {
+    icon: Zap,
+    title: "Settle in one tap",
+    description: "The fewest payments, computed for you.",
+  },
+];
 
-function ProofCard() {
-  return (
-    <Card className="w-full max-w-xl mx-auto">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold">Who owes whom</CardTitle>
-        <p className="text-sm text-muted-foreground mt-1">
-          5 messy IOUs → 2 clean payments
-        </p>
-      </CardHeader>
-      <CardContent className="pt-0 space-y-2">
-        <div className="space-y-2">
-          {debtsBefore.map((debt) => (
-            <DebtRow key={`${debt.from}-${debt.to}`} {...debt} />
-          ))}
-        </div>
-        <div className="flex items-center justify-center my-4">
-          <ArrowRight className="h-6 w-6 text-primary" />
-        </div>
-        <div className="space-y-2">
-          {debtsAfter.map((debt) => (
-            <DebtRow key={`${debt.from}-${debt.to}`} {...debt} showCheck isAfter />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+const steps = [
+  { number: "1", title: "Create a group", description: "Invite friends by email." },
+  { number: "2", title: "Add expenses", description: "Any currency, any split." },
+  { number: "3", title: "Settle up", description: "Fewest possible payments." },
+];
 
-function FeatureCard({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-}) {
+function Initial({ name }: { name: string }) {
   return (
-    <Card className="flex flex-col h-full group hover:shadow-lg transition-shadow duration-200">
-      <CardContent className="flex flex-col h-full p-6">
-        <div className="mb-4 p-2 bg-primary/10 rounded-lg w-fit group-hover:scale-105 transition-transform">
-          <Icon className="h-5 w-5 text-primary" />
-        </div>
-        <h3 className="font-semibold text-lg mb-2">{title}</h3>
-        <p className="text-sm text-muted-foreground flex-1">{description}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Step({
-  number,
-  title,
-  description,
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex gap-4">
-      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-lg">
-        {number}
-      </span>
-      <div>
-        <h3 className="font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-    </div>
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+      {name[0]}
+    </span>
   );
 }
 
 function CurrencyGlyphs() {
   return (
     <div
-      className="pointer-events-none fixed inset-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
       aria-hidden="true"
     >
-      {currencyGlyphs.map((glyph, i) => (
+      {glyphs.map((glyph, i) => (
         <span
-          key={glyph}
-          className="absolute text-4xl font-mono text-primary/5 animate-float"
+          key={i}
+          className="absolute text-5xl font-mono text-primary/10 animate-float"
           style={{
-            left: `${(i * 100) / currencyGlyphs.length}%`,
-            top: `${(i * 7) % 100}%`,
-            animationDelay: `${i * 0.5}s`,
-            animationDuration: `${15 + i * 2}s`,
+            left: `${8 + (i * 17) % 84}%`,
+            top: `${(i * 19) % 90}%`,
+            animationDelay: `${i * 0.6}s`,
+            animationDuration: `${16 + i * 2}s`,
           }}
         >
           {glyph}
@@ -161,128 +75,174 @@ function CurrencyGlyphs() {
   );
 }
 
-export default async function Home() {
+function StartButton() {
   return (
-    <div className="flex flex-col min-h-screen bg-background relative overflow-x-hidden">
+    <Show
+      when="signed-out"
+      fallback={
+        <Link href="/dashboard">
+          <Button size="lg" className="h-12 px-8 text-base">
+            Start splitting — it&apos;s free
+          </Button>
+        </Link>
+      }
+    >
+      <SignUpButton mode="modal">
+        <Button size="lg" className="h-12 px-8 text-base">
+          Start splitting — it&apos;s free
+        </Button>
+      </SignUpButton>
+    </Show>
+  );
+}
+
+export default function Home() {
+  return (
+    <div className="flex flex-col flex-1 relative overflow-x-hidden">
       <CurrencyGlyphs />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 relative z-10">
-        <section className="py-20 md:py-32 text-center space-y-6">
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
-            Shared expenses,{" "}
-            <span className="text-primary">minimized debts</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Add expenses in any currency. Splitter calculates the fewest payments
-            to settle up — so nobody overpays.
-          </p>
-          <Show
-            when="signed-out"
-            fallback={
-              <Link href="/dashboard">
-                <Button size="lg" className="gap-2">
-                  <span>Get started free</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            }
-          >
-            <SignUpButton mode="modal">
-              <Button size="lg" className="gap-2">
-                <span>Get started free</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </SignUpButton>
-          </Show>
-        </section>
+      {/* Hero */}
+      <section className="max-w-5xl mx-auto w-full px-6 pt-16 md:pt-24 pb-8 text-center relative z-10">
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
+          Split expenses,
+          <br />
+          <span className="text-primary">skip the mental math.</span>
+        </h1>
+        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed">
+          Track shared costs in any currency. Splitter nets it all down to the
+          fewest possible payments.
+        </p>
+        <div className="mt-8">
+          <StartButton />
+        </div>
+      </section>
 
-        <section className="py-20 bg-muted/40 rounded-2xl" aria-labelledby="proof-heading">
-          <div className="px-6">
-            <h2 id="proof-heading" className="sr-only">
-              How the algorithm works
-            </h2>
-            <ProofCard />
-          </div>
-        </section>
-
-        <section className="py-20" aria-labelledby="features-heading">
-          <h2 id="features-heading" className="sr-only">Features</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <FeatureCard
-              icon={CreditCard}
-              title="Flexible splits"
-              description="Equal, by percentage, or exact amounts — per expense."
-            />
-            <FeatureCard
-              icon={Globe}
-              title="Any currency"
-              description="¥, €, ₹ in one group. Converted at entry, displayed in yours."
-            />
-            <FeatureCard
-              icon={Zap}
-              title="One-tap settle"
-              description="Fewest possible payments. Either party can record it."
-            />
-          </div>
-        </section>
-
-        <section className="py-20 bg-muted/40 rounded-2xl" aria-labelledby="how-heading">
-          <div className="px-6">
-            <h2 id="how-heading" className="sr-only">How it works</h2>
-            <div className="grid md:grid-cols-3 gap-8 text-center md:text-left">
-              <Step
-                number="1"
-                title="Create a group"
-                description="Invite friends by email. They join with their Splitter account."
-              />
-              <Step
-                number="2"
-                title="Add expenses"
-                description="Paid by one, split however you want. Any currency works."
-              />
-              <Step
-                number="3"
-                title="Settle up"
-                description="See who owes whom. Tap to record payment — done."
-              />
+      {/* Proof: 5 IOUs → 2 payments */}
+      <section className="max-w-5xl mx-auto w-full px-6 py-12 md:py-16 relative z-10">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-4">
+          <div className="w-full max-w-md -rotate-1 hover:rotate-0 transition-transform">
+            <div className="rounded-xl border bg-card shadow-sm">
+              <div className="flex items-center justify-between px-5 py-4 border-b">
+                <h2 className="font-bold">After the trip</h2>
+                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+                  5 IOUs
+                </span>
+              </div>
+              <div className="divide-y">
+                {ious.map((d, i) => (
+                  <div
+                    key={`${d.from}-${d.to}-${i}`}
+                    className="flex items-center gap-3 px-5 py-3.5"
+                  >
+                    <Initial name={d.from} />
+                    <p className="flex-1 text-sm">
+                      <span className="font-medium">{d.from}</span>
+                      <span className="text-muted-foreground"> owes </span>
+                      <span className="font-medium">{d.to}</span>
+                    </p>
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      ${d.amount}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </section>
 
-        <section className="py-20 text-center" aria-labelledby="cta-heading">
-          <h2
-            id="cta-heading"
-            className="text-2xl md:text-3xl font-semibold tracking-tight mb-4"
-          >
-            Stop doing the math.{" "}
-            <span className="text-primary">Start splitting.</span>
-          </h2>
-          <Show
-            when="signed-out"
-            fallback={
-              <Link href="/dashboard">
-                <Button size="lg" className="gap-2">
-                  <span>Get started free</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            }
-          >
-            <SignUpButton mode="modal">
-              <Button size="lg" className="gap-2">
-                <span>Get started free</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </SignUpButton>
-          </Show>
-        </section>
-      </main>
+          <ArrowRight
+            className="h-8 w-8 shrink-0 rotate-90 lg:rotate-0 text-primary"
+            aria-hidden
+          />
 
-      <footer className="border-t border-border px-6 py-8 relative z-10">
-        <div className="max-w-5xl mx-auto text-center text-sm text-muted-foreground">
-          No spreadsheets were harmed.
+          <div className="w-full max-w-sm rotate-1 hover:rotate-0 transition-transform">
+            <div className="rounded-xl border bg-card shadow-sm">
+              <div className="flex items-center justify-between px-5 py-4 border-b">
+                <h2 className="font-bold">With Splitter</h2>
+                <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                  2 payments
+                </span>
+              </div>
+              <div className="divide-y">
+                {settled.map((d) => (
+                  <div
+                    key={`${d.from}-${d.to}`}
+                    className="flex items-center gap-3 px-5 py-3.5"
+                  >
+                    <Initial name={d.from} />
+                    <p className="flex-1 text-sm">
+                      <span className="font-medium">{d.from}</span>
+                      <span className="text-muted-foreground"> owes </span>
+                      <span className="font-medium">{d.to}</span>
+                    </p>
+                    <span className="text-sm font-bold text-emerald-600 tabular-nums">
+                      ${d.amount}
+                    </span>
+                  </div>
+                ))}
+                <div className="px-5 py-3.5">
+                  <p className="text-sm text-muted-foreground">
+                    Ben owes nothing at all
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </footer>
+      </section>
+
+      {/* Features */}
+      <section className="w-full bg-muted py-16 md:py-24 relative z-10">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid md:grid-cols-3 gap-6">
+            {features.map((f) => (
+              <div key={f.title} className="rounded-xl border bg-card p-6">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <f.icon className="h-5 w-5 text-primary" aria-hidden />
+                </span>
+                <h3 className="mt-4 font-bold">{f.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                  {f.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="max-w-5xl mx-auto w-full px-6 py-16 md:py-24 relative z-10">
+        <div className="grid md:grid-cols-3 gap-10">
+          {steps.map((s) => (
+            <div key={s.number} className="flex items-start gap-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
+                {s.number}
+              </span>
+              <div>
+                <h3 className="font-bold">{s.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {s.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="w-full bg-muted py-16 md:py-24 relative z-10">
+        <div className="max-w-5xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Ready to stop doing math at dinner?
+          </h2>
+          <p className="mt-3 text-muted-foreground">
+            No spreadsheets were harmed.
+          </p>
+          <div className="mt-8">
+            <StartButton />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
+
