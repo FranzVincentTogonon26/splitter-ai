@@ -56,9 +56,12 @@ with pictures, not longer prompts:
 
 ## 05 Webhook User Sync
 
-- [ ] `app/api/webhooks/clerk/route.ts` with `verifyWebhook`
-- [ ] Idempotent upserts for user.created/updated; deleteMany for deleted
+- [x] `app/api/webhooks/clerk/route.ts` with `verifyWebhook`
+- [x] Idempotent upserts for user.created/updated; deleteMany for deleted
 - [ ] Register the endpoint + `CLERK_WEBHOOK_SIGNING_SECRET` in production
+      (dev secret placeholder in `.env.local`; run `clerk auth login`, then
+      register the endpoint and swap in the real signing secret —
+      `scripts/verify-webhook-e2e.mjs` proves the route locally)
 
 ## 06 Flexible Splits
 
