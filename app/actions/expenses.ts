@@ -3,12 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
-import {
-  getGroupById,
-  getGroupMemberIds,
-  insertEqualExpense,
-  insertSettlement,
-} from "@/lib/mock-db";
+import { db } from "@/lib/db";
 import { netBalances } from "@/lib/queries";
 
 export type AddExpenseState = { ok?: boolean; error?: string };
@@ -21,8 +16,9 @@ export async function addExpense(
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  const memberIds = getGroupMemberIds(groupId);
-  if (!getGroupById(groupId) || !memberIds.includes(userId)) {
+  const memberRows = await db.groupMember.findMany({ where: { groupId } });
+  const memberIds = memberRows.map((m) => m.userId);
+  if (memberIds.length === 0 || !memberIds.includes(userId)) {
     return { error: "Group not found" };
   }
 
@@ -41,12 +37,29 @@ export async function addExpense(
     return { error: "Select at least one member" };
   }
 
-  insertEqualExpense({
-    groupId,
-    paidById,
-    description,
-    amountCents,
-    memberIds: splitIds,
+  // Equal split with exact-sum reconciliation (flexible modes land in phase 06).
+  const unique = [...new Set(splitIds)];
+  if (unique.length !== splitIds.length) {
+    return { error: "Select each member once" };
+  }
+
+  const n = unique.length;
+  const base = Math.floor(amountCents / n);
+  let remainder = amountCents - base * n;
+  const splits = unique.map((memberId) => {
+    const share = remainder > 0 ? base + 1 : base;
+    remainder -= remainder > 0 ? 1 : 0;
+    return { userId: memberId, amountCents: share };
+  });
+
+  await db.expense.create({
+    data: {
+      groupId,
+      paidById,
+      description,
+      amountCents,
+      splits: { create: splits },
+    },
   });
 
   revalidatePath("/dashboard");
@@ -65,24 +78,22 @@ export async function settleUp(
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  const memberIds = getGroupMemberIds(groupId);
-  if (!getGroupById(groupId) || !memberIds.includes(userId)) {
+  const memberRows = await db.groupMember.findMany({ where: { groupId } });
+  const memberIds = memberRows.map((m) => m.userId);
+  if (memberIds.length === 0 || !memberIds.includes(userId)) {
     return { error: "Group not found" };
   }
   if (!memberIds.includes(fromUserId) || !memberIds.includes(toUserId)) {
     return { error: "Group not found" };
   }
 
-  const owed = -(netBalances(groupId).get(fromUserId) ?? 0);
+  const owed = -((await netBalances(groupId)).get(fromUserId) ?? 0);
   if (amountCents <= 0 || amountCents > owed) {
     return { error: "Nothing to settle" };
   }
 
-  insertSettlement({
-    groupId,
-    fromUserId,
-    toUserId,
-    amountCents,
+  await db.settlement.create({
+    data: { groupId, fromUserId, toUserId, amountCents },
   });
 
   revalidatePath("/dashboard");

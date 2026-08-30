@@ -1,48 +1,6 @@
-export type User = {
-  id: string;
-  email: string;
-  name: string;
-  imageUrl: string | null;
-};
-
-export type Group = {
-  id: string;
-  name: string;
-};
+import type { Group, User } from "@prisma/client";
 
 export type GroupMemberRole = "admin" | "member";
-
-export type GroupMember = {
-  groupId: string;
-  userId: string;
-  role: GroupMemberRole;
-};
-
-export type Expense = {
-  id: string;
-  groupId: string;
-  paidById: string;
-  amountCents: number;
-  originalCurrency: string;
-  originalAmountCents: number;
-  description: string;
-  createdAt: Date;
-};
-
-export type ExpenseSplit = {
-  expenseId: string;
-  userId: string;
-  amountCents: number;
-};
-
-export type Settlement = {
-  id: string;
-  groupId: string;
-  fromUserId: string;
-  toUserId: string;
-  amountCents: number;
-  createdAt: Date;
-};
 
 export type DashboardGroupCard = {
   group: Group;

@@ -4,14 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-import {
-  findUserByEmail,
-  getGroupMemberIds,
-  getGroupById,
-  getUserById,
-  insertGroup,
-  insertGroupMember,
-} from "@/lib/mock-db";
+import { db } from "@/lib/db";
 
 export async function createGroup(formData: FormData) {
   const { userId } = await auth();
@@ -20,7 +13,14 @@ export async function createGroup(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
-  const group = insertGroup(name, userId);
+  const group = await db.$transaction(async (tx) => {
+    const created = await tx.group.create({ data: { name } });
+    await tx.groupMember.create({
+      data: { groupId: created.id, userId, role: "admin" },
+    });
+    return created;
+  });
+
   revalidatePath("/dashboard");
   redirect(`/groups/${group.id}`);
 }
@@ -35,23 +35,32 @@ export async function addMember(
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  if (!getGroupById(groupId) || !getGroupMemberIds(groupId).includes(userId)) {
+  const group = await db.group.findUnique({
+    where: { id: groupId },
+    include: { members: { where: { userId } } },
+  });
+  if (!group || group.members.length === 0) {
     return { error: "Group not found" };
   }
 
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(email)) {
     return { error: "Enter a valid email" };
   }
 
-  const user = findUserByEmail(email);
+  const user = await db.user.findUnique({ where: { email } });
   if (!user) return { error: "No Splitter account with that email" };
 
-  if (getGroupMemberIds(groupId).includes(user.id)) {
-    return { error: `${getUserById(user.id)?.name ?? "That person"} is already a member` };
-  }
+  const existing = await db.groupMember.findUnique({
+    where: { groupId_userId: { groupId, userId: user.id } },
+  });
+  if (existing) return { error: `${user.name} is already a member` };
 
-  insertGroupMember(groupId, user.id);
+  await db.groupMember.create({
+    data: { groupId, userId: user.id, role: "member" },
+  });
+
+  revalidatePath("/dashboard");
   revalidatePath(`/groups/${groupId}`);
   return {};
 }

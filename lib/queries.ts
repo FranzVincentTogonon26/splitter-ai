@@ -1,53 +1,45 @@
 import { notFound } from "next/navigation";
+import type { Group } from "@prisma/client";
 
-import { formatDate, formatMoney, formatMoneyIn } from "./format";
-import {
-  getExpensesByGroup,
-  getGroupById,
-  getGroupIdsForUser,
-  getGroupMemberIds,
-  getMemberRole,
-  getSplitsByGroup,
-  getSettlementsByGroup,
-  getUserById,
-} from "./mock-db";
+import { db } from "@/lib/db";
+import { formatDate, formatMoney } from "./format";
 import type {
+  DashboardGroupCard,
   DashboardView,
   DebtRow,
   ExpenseRow,
   GroupView,
-  User,
-  Expense,
-  ExpenseSplit,
-  Settlement,
+  MemberRow,
 } from "./types";
 
-function ledger(groupId: string): {
-  expenses: Expense[];
-  splits: ExpenseSplit[];
-  settlements: Settlement[];
-} {
-  return {
-    expenses: getExpensesByGroup(groupId),
-    splits: getSplitsByGroup(groupId),
-    settlements: getSettlementsByGroup(groupId),
-  };
-}
+/**
+ * Net balance per member, derived at read time (never stored):
+ * (paid) - (share of every expense) +/- settlements.
+ */
+export async function netBalances(groupId: string): Promise<Map<string, number>> {
+  const [expenses, settlements, members] = await Promise.all([
+    db.expense.findMany({
+      where: { groupId },
+      include: { splits: true },
+    }),
+    db.settlement.findMany({ where: { groupId } }),
+    db.groupMember.findMany({ where: { groupId } }),
+  ]);
 
-export function netBalances(groupId: string): Map<string, number> {
   const balances = new Map<string, number>();
-  for (const id of getGroupMemberIds(groupId)) balances.set(id, 0);
-
-  const { expenses, splits, settlements } = ledger(groupId);
+  for (const m of members) balances.set(m.userId, 0);
 
   for (const e of expenses) {
     balances.set(e.paidById, (balances.get(e.paidById) ?? 0) + e.amountCents);
-  }
-  for (const s of splits) {
-    balances.set(s.userId, (balances.get(s.userId) ?? 0) - s.amountCents);
+    for (const s of e.splits) {
+      balances.set(s.userId, (balances.get(s.userId) ?? 0) - s.amountCents);
+    }
   }
   for (const st of settlements) {
-    balances.set(st.fromUserId, (balances.get(st.fromUserId) ?? 0) + st.amountCents);
+    balances.set(
+      st.fromUserId,
+      (balances.get(st.fromUserId) ?? 0) + st.amountCents,
+    );
     balances.set(st.toUserId, (balances.get(st.toUserId) ?? 0) - st.amountCents);
   }
   return balances;
@@ -79,29 +71,42 @@ function simplifyDebts(balances: Map<string, number>): DebtRow[] {
   return debts;
 }
 
-function groupCard(groupId: string, userId: string) {
-  const group = getGroupById(groupId)!;
-  const memberUsers = getGroupMemberIds(groupId)
-    .map(getUserById)
-    .filter((u): u is User => Boolean(u));
+async function groupCard(
+  group: Group,
+  userId: string,
+): Promise<DashboardGroupCard> {
+  const [memberRows, total, balances] = await Promise.all([
+    db.groupMember.findMany({
+      where: { groupId: group.id },
+      include: { user: true },
+    }),
+    db.expense.aggregate({
+      where: { groupId: group.id },
+      _sum: { amountCents: true },
+    }),
+    netBalances(group.id),
+  ]);
+
   return {
     group,
-    yourBalanceCents: netBalances(groupId).get(userId) ?? 0,
-    totalCents: getExpensesByGroup(groupId).reduce(
-      (sum, e) => sum + e.amountCents,
-      0,
-    ),
-    members: memberUsers,
+    yourBalanceCents: balances.get(userId) ?? 0,
+    totalCents: total._sum.amountCents ?? 0,
+    members: memberRows.map((m) => m.user),
   };
 }
 
-export function getDashboard(
+export async function getDashboard(
   userId: string,
   firstName: string,
-): DashboardView {
-  const cards = getGroupIdsForUser(userId)
-    .filter((id) => getGroupById(id))
-    .map((id) => groupCard(id, userId));
+): Promise<DashboardView> {
+  const memberships = await db.groupMember.findMany({
+    where: { userId },
+    include: { group: true },
+  });
+
+  const cards = await Promise.all(
+    memberships.map((m) => groupCard(m.group, userId)),
+  );
 
   return {
     firstName,
@@ -117,55 +122,56 @@ export function getDashboard(
   };
 }
 
-export function getGroupView(groupId: string, userId: string): GroupView {
-  const group = getGroupById(groupId);
-  if (!group || !getGroupMemberIds(groupId).includes(userId)) notFound();
+export async function getGroupView(
+  groupId: string,
+  userId: string,
+): Promise<GroupView> {
+  const group = await db.group.findUnique({ where: { id: groupId } });
+  if (!group) notFound();
 
-  const memberIds = getGroupMemberIds(groupId);
-  const allSplits = getSplitsByGroup(groupId);
-  const nameFor = (id: string) => {
-    if (id === userId) return "You";
-    return getUserById(id)?.name ?? "Unknown";
-  };
+  const [memberRows, expenses, balances] = await Promise.all([
+    db.groupMember.findMany({
+      where: { groupId },
+      include: { user: true },
+    }),
+    db.expense.findMany({
+      where: { groupId },
+      include: { splits: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    netBalances(groupId),
+  ]);
 
-  const expenses: ExpenseRow[] = getExpensesByGroup(groupId)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .map((e) => ({
-      id: e.id,
-      description: e.description,
-      payerName: nameFor(e.paidById),
-      paidById: e.paidById,
-      amountCents: e.amountCents,
-      paidLabel:
-        e.originalCurrency === "USD"
-          ? formatMoney(e.amountCents)
-          : `${formatMoneyIn(e.originalCurrency, e.originalAmountCents)} (≈ ${formatMoney(e.amountCents)})`,
-      dateLabel: formatDate(e.createdAt),
-      yourShareCents:
-        allSplits.find((s) => s.expenseId === e.id && s.userId === userId)
-          ?.amountCents ?? 0,
-      isRecent: Date.now() - e.createdAt.getTime() < 60_000,
-    }));
+  if (!memberRows.some((m) => m.userId === userId)) notFound();
 
-  const members = memberIds
-    .map(getUserById)
-    .filter((u): u is User => Boolean(u))
-    .map((user) => ({
-      user,
-      role: getMemberRole(groupId, user.id) ?? ("member" as const),
-    }));
+  const nameByUser = new Map<string, string>();
+  for (const m of memberRows) nameByUser.set(m.userId, m.user.name);
+  const nameOf = (id: string) =>
+    id === userId ? "You" : (nameByUser.get(id) ?? "Unknown");
 
-  const balances = netBalances(groupId);
+  const expensesView: ExpenseRow[] = expenses.map((e) => ({
+    id: e.id,
+    description: e.description,
+    payerName: nameOf(e.paidById),
+    paidById: e.paidById,
+    amountCents: e.amountCents,
+    paidLabel: formatMoney(e.amountCents),
+    dateLabel: formatDate(e.createdAt),
+    yourShareCents: e.splits.find((s) => s.userId === userId)?.amountCents ?? 0,
+    isRecent: Date.now() - e.createdAt.getTime() < 60_000,
+  }));
+
+  const members: MemberRow[] = memberRows.map((m) => ({
+    user: m.user,
+    role: m.role === "admin" ? "admin" : "member",
+  }));
 
   return {
     group,
     yourBalanceCents: balances.get(userId) ?? 0,
-    totalCents: getExpensesByGroup(groupId).reduce(
-      (sum, e) => sum + e.amountCents,
-      0,
-    ),
+    totalCents: expenses.reduce((sum, e) => sum + e.amountCents, 0),
     members,
-    expenses,
+    expenses: expensesView,
     debts: simplifyDebts(balances),
   };
 }

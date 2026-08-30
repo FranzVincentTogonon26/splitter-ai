@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CurrencySelect } from "@/components/currency-select";
 import { formatMoney } from "@/lib/format";
-import { ensureCurrentUser } from "@/lib/mock-db";
+import { ensureUser } from "@/lib/ensure-user";
 import { getDashboard } from "@/lib/queries";
 import type { DashboardGroupCard } from "@/lib/types";
 
@@ -48,9 +48,10 @@ export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  const user = await ensureCurrentUser();
+  const user = await ensureUser();
+  if (!user) redirect("/sign-in");
   const firstName = user.name.split(" ")[0];
-  const dashboard = getDashboard(userId, firstName);
+  const dashboard = await getDashboard(userId, firstName);
 
   return (
     <div className="flex flex-col flex-1 w-full max-w-6xl mx-auto px-4 py-8 md:py-12">
