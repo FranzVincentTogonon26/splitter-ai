@@ -1,4 +1,4 @@
-import { SignUpButton, SignInButton, UserButton, Show } from "@clerk/nextjs";
+import { SignUpButton, Show } from "@clerk/nextjs";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -165,34 +165,6 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-background relative overflow-x-hidden">
       <CurrencyGlyphs />
-      <header className="border-b border-border px-6 py-4 relative z-10">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span className="text-2xl font-semibold tracking-tight">
-            💸 Splitter
-          </span>
-          <nav className="flex items-center gap-4">
-            <Show when="signed-in">
-              <Link
-                href="/dashboard"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Dashboard
-              </Link>
-              <UserButton />
-            </Show>
-            <Show when="signed-out">
-              <SignInButton mode="modal">
-                <Button variant="ghost" size="sm">
-                  Sign in
-                </Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <Button size="sm">Get started</Button>
-              </SignUpButton>
-            </Show>
-          </nav>
-        </div>
-      </header>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-6 relative z-10">
         <section className="py-20 md:py-32 text-center space-y-6">

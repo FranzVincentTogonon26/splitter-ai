@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { formatDate, formatMoney } from "./format";
+import { formatDate } from "./format";
 import {
   getExpensesByGroup,
   getGroupById,
@@ -134,11 +134,13 @@ export function getGroupView(groupId: string, userId: string): GroupView {
       id: e.id,
       description: e.description,
       payerName: nameFor(e.paidById),
-      paidLabel: formatMoney(e.amountCents),
+      paidById: e.paidById,
+      amountCents: e.amountCents,
       dateLabel: formatDate(e.createdAt),
       yourShareCents:
         allSplits.find((s) => s.expenseId === e.id && s.userId === userId)
           ?.amountCents ?? 0,
+      isRecent: Date.now() - e.createdAt.getTime() < 60_000,
     }));
 
   const members = memberIds

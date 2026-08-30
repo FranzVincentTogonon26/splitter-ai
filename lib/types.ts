@@ -65,9 +65,11 @@ export type ExpenseRow = {
   id: string;
   description: string;
   payerName: string;
-  paidLabel: string;
+  paidById: string;
+  amountCents: number;
   dateLabel: string;
   yourShareCents: number;
+  isRecent: boolean;
 };
 
 export type DebtRow = {
