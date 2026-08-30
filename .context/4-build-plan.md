@@ -8,44 +8,44 @@ approximation.
 
 ## 01 Agent-Native Infrastructure
 
-- [ ] Provision Clerk app + keys with the Clerk CLI (`clerk init --framework
+- [x] Provision Clerk app + keys with the Clerk CLI (`clerk init --framework
 next`; `clerk env pull` for refreshes; verify with `clerk doctor`)
-- [ ] `proxy.ts` with `clerkMiddleware()` protecting `/dashboard` and
+- [x] `proxy.ts` with `clerkMiddleware()` protecting `/dashboard` and
       `/groups/*`; `/`, auth pages, and webhooks stay public
-- [ ] Root layout wrapped in `<ClerkProvider>`; header with logo, Dashboard
+- [x] Root layout wrapped in `<ClerkProvider>`; header with logo, Dashboard
       link + `<UserButton />` (signed in), Sign in / Get started modals
       (signed out)
-- [ ] `/sign-in` and `/sign-up` catch-all routes
-- [ ] Keyless mode works before real keys exist
+- [x] `/sign-in` and `/sign-up` catch-all routes
+- [x] Keyless mode works before real keys exist
 
 ## 02 UI Foundation (mock data)
 
-- [ ] Dashboard: welcome line, owed/owe tiles, group cards
-- [ ] Group view: expenses list, who-owes-whom sidebar, members
-- [ ] Add-expense modal shell against the typed mock data in `lib/`
-- [ ] View-model types mirror the future Prisma models so the swap is drop-in
+- [x] Dashboard: welcome line, owed/owe tiles, group cards
+- [x] Group view: expenses list, who-owes-whom sidebar, members
+- [x] Add-expense modal shell against the typed mock data in `lib/`
+- [x] View-model types mirror the future Prisma models so the swap is drop-in
 
 ## 02b Visual Reference (screenshots)
 
 The phase-2 UI won't match the intended design from words alone. Fix it
 with pictures, not longer prompts:
 
-- [ ] Drop screenshots of the target design into `.context/screenshots/`
+- [x] Drop screenshots of the target design into `.context/screenshots/`
       (see its README for the expected files)
-- [ ] Prompt the agent to make each page match its screenshot — layout,
+- [x] Prompt the agent to make each page match its screenshot — layout,
       spacing, hierarchy from the image; colors from theme tokens only
-- [ ] Keep the screenshots in the repo: they're part of the spec now, and
+- [x] Keep the screenshots in the repo: they're part of the spec now, and
       every later phase checks against them
 
 ## 03 Database & Server Actions
 
-- [ ] Prisma schema per `3-database-schema.md` (User id = Clerk userId;
+- [x] Prisma schema per `3-database-schema.md` (User id = Clerk userId;
       integer cents; splits + settlements)
-- [ ] Server actions: createGroup (creator = admin, redirect into group),
+- [x] Server actions: createGroup (creator = admin, redirect into group),
       addMember (by email, must have an account), addExpense, settleUp
-- [ ] Every action: `await auth()` first, membership verified, revalidate
-- [ ] `lib/ensure-user.ts` upserts the signed-in user as dev fallback
-- [ ] Mock data deleted; pages query through `lib/queries.ts`
+- [x] Every action: `await auth()` first, membership verified, revalidate
+- [x] `lib/ensure-user.ts` upserts the signed-in user as dev fallback
+- [x] Mock data deleted; pages query through `lib/queries.ts`
 
 ## 04 Debt Simplification
 
