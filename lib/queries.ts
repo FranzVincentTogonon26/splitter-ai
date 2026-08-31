@@ -153,6 +153,10 @@ export async function getGroupView(
           e.currency === display.code
             ? null
             : formatMoneyIn(e.currency, e.nativeAmountCents),
+        fxLabel:
+          e.fxRate != null && e.currency !== "USD"
+            ? `at ${e.fxRate.toFixed(4)}`
+            : null,
         dateLabel: formatDate(e.createdAt),
         yourShareCents:
           e.splits.find((s) => s.userId === userId)?.amountCents ?? 0,

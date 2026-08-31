@@ -20,6 +20,10 @@ type ValidatedExpense =
       nativeAmountCents: number;
       usdAmountCents: number;
       usdSplits: { userId: string; amountCents: number }[];
+      /** per-USD rate used at save; null when no conversion happened (USD). */
+      fxRate: number | null;
+      /** When the conversion ran; null when no conversion happened. */
+      fxDate: Date | null;
     }
   | { ok: false; error: string };
 
@@ -59,12 +63,18 @@ async function validateExpenseInput(
 
   // Convert once to USD at today's rate (USD itself never hits the network).
   const rates = currency === "USD" ? null : await getRates();
+  const perUsd = currency === "USD" ? 1 : perUsdFor(rates, currency);
   const usd = convertToUsd({
     nativeAmountCents,
     splits: native.splits,
-    perUsd: perUsdFor(rates, currency),
+    perUsd,
   });
   if (!usd.ok) return { ok: false, error: usd.error };
+
+  // FX auditability (phase 14): record the rate and date used at save so the
+  // conversion is always reproducible. Null when no conversion happened.
+  const fxRate = currency === "USD" ? null : perUsd;
+  const fxDate = currency === "USD" ? null : new Date();
 
   return {
     ok: true,
@@ -74,6 +84,8 @@ async function validateExpenseInput(
     nativeAmountCents,
     usdAmountCents: usd.amountCents,
     usdSplits: usd.splits,
+    fxRate,
+    fxDate,
   };
 }
 
@@ -104,6 +116,8 @@ export async function addExpense(
       amountCents: input.usdAmountCents,
       currency: input.currency,
       nativeAmountCents: input.nativeAmountCents,
+      fxRate: input.fxRate,
+      fxDate: input.fxDate,
       splits: { create: input.usdSplits },
     },
   });
@@ -148,6 +162,8 @@ export async function updateExpense(
       amountCents: input.usdAmountCents,
       currency: input.currency,
       nativeAmountCents: input.nativeAmountCents,
+      fxRate: input.fxRate,
+      fxDate: input.fxDate,
       splits: { deleteMany: {}, create: input.usdSplits },
     },
   });

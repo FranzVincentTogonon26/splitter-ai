@@ -52,7 +52,7 @@ export function CurrencySelect({
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="bg-white border border-border">
+      <SelectContent className="bg-popover border border-border">
         {CURRENCIES.map((c) => (
           <SelectItem key={c.code} value={c.code}>
             <span className="font-semibold">{c.code}</span>

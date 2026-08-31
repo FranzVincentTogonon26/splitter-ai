@@ -34,6 +34,9 @@ export type ExpenseRow = {
   /** The original entry (e.g. "€25.00") when it differs from the display
    *  currency; null when the expense was entered in the display currency. */
   nativeLabel: string | null;
+  /** The save-time FX rate used (e.g. "at 0.9200"); null when no conversion
+   *  happened or the ledger == display currency. */
+  fxLabel: string | null;
   dateLabel: string;
   yourShareCents: number;
   /** The viewer's split, in the active display currency. */

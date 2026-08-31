@@ -54,6 +54,11 @@ model Expense {
   currency          String   @default("USD")
   nativeAmountCents Int      @default(0)
 
+  // FX auditability (phase 14): the rate used at save time and when. Null
+  // when the expense was entered in the ledger currency (no conversion).
+  fxRate Float?
+  fxDate DateTime?
+
   group  Group         @relation(fields: [groupId], references: [id])
   payer  User          @relation("PaidExpenses", fields: [paidById], references: [id])
   splits ExpenseSplit[]

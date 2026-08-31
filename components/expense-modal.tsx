@@ -27,11 +27,7 @@ import {
 } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/currencies";
 import { formatMoney } from "@/lib/format";
-import {
-  equalSplits,
-  prefillFromSplits,
-  type SplitMode,
-} from "@/lib/splits";
+import { equalSplits, prefillFromSplits, type SplitMode } from "@/lib/splits";
 import type { GroupView } from "@/lib/types";
 
 const SPLIT_MODES: { value: SplitMode; label: string }[] = [
@@ -59,12 +55,14 @@ function prefillPercentages(
   shares: readonly number[],
 ): Record<string, number> {
   const weights =
-    amountCents > 0 ? shares.map((s) => s / amountCents) : ids.map(() => 1 / ids.length);
+    amountCents > 0
+      ? shares.map((s) => s / amountCents)
+      : ids.map(() => 1 / ids.length);
   const units = weights.map((w) => Math.floor(w * 10_000));
   let leftover = 10_000 - units.reduce((a, b) => a + b, 0);
   const byRemainder = weights
     .map((_, i) => i)
-    .sort((a, b) => (weights[b] * 10_000) % 1 - (weights[a] * 10_000) % 1);
+    .sort((a, b) => ((weights[b] * 10_000) % 1) - ((weights[a] * 10_000) % 1));
   for (let k = 0; leftover > 0; k++, leftover--) {
     units[byRemainder[k % byRemainder.length]] += 1;
   }
@@ -97,9 +95,7 @@ export function ExpenseModal({
     editingExpense?.description ?? "",
   );
   const [amount, setAmount] = React.useState(
-    editingExpense
-      ? (editingExpense.nativeAmountCents / 100).toString()
-      : "",
+    editingExpense ? (editingExpense.nativeAmountCents / 100).toString() : "",
   );
   const [currency, setCurrency] = React.useState(
     editingExpense?.currency ?? "USD",
@@ -189,11 +185,11 @@ export function ExpenseModal({
     // Display order: leftover cents land on the first rows in the list.
     selectedMemberObjects.forEach((m) => {
       formData.append("members", m.user.id);
-      formData.set(`percentage-${m.user.id}`, String(percentages[m.user.id] ?? 0));
       formData.set(
-        `exact-${m.user.id}`,
-        String(exactAmounts[m.user.id] ?? 0),
+        `percentage-${m.user.id}`,
+        String(percentages[m.user.id] ?? 0),
       );
+      formData.set(`exact-${m.user.id}`, String(exactAmounts[m.user.id] ?? 0));
     });
     startTransition(() => {
       formAction(formData);
@@ -295,9 +291,7 @@ export function ExpenseModal({
                   {aiPending ? "Reading…" : "Parse"}
                 </Button>
               </div>
-              {aiError && (
-                <p className="text-sm text-rose-500">{aiError}</p>
-              )}
+              {aiError && <p className="text-sm text-rose-500">{aiError}</p>}
             </div>
           )}
 
@@ -340,7 +334,7 @@ export function ExpenseModal({
                 <SelectTrigger className="w-24 gap-1 border-border bg-transparent px-1 shadow-none font-semibold focus:ring-0 focus:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-border">
+                <SelectContent className="bg-popover border-border">
                   {CURRENCIES.map((c) => (
                     <SelectItem key={c.code} value={c.code}>
                       {c.code} <span className="font-mono">{c.symbol}</span>
@@ -363,7 +357,7 @@ export function ExpenseModal({
               <SelectTrigger className="w-auto gap-1 border-none bg-transparent px-1 shadow-none text-base font-semibold text-primary focus:ring-0 focus:ring-offset-0">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white border-border">
+              <SelectContent className="bg-popover border-border">
                 {members.map((m) => (
                   <SelectItem key={m.user.id} value={m.user.id}>
                     {m.user.name}
@@ -384,7 +378,13 @@ export function ExpenseModal({
                 const ids = selectedMemberObjects.map((m) => m.user.id);
                 const shares = equalSplits(totalAmount, ids);
                 if (mode === "percentage") {
-                  setPercentages(prefillPercentages(totalAmount, ids, shares.map((s) => s.amountCents)));
+                  setPercentages(
+                    prefillPercentages(
+                      totalAmount,
+                      ids,
+                      shares.map((s) => s.amountCents),
+                    ),
+                  );
                 } else if (mode === "exact") {
                   setExactAmounts(
                     Object.fromEntries(
@@ -398,7 +398,7 @@ export function ExpenseModal({
               <SelectTrigger className="w-auto gap-1 border-none bg-transparent px-1 shadow-none text-base font-semibold text-primary focus:ring-0 focus:ring-offset-0">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white border-border">
+              <SelectContent className="bg-popover border-border">
                 {SPLIT_MODES.map((mode) => (
                   <SelectItem key={mode.value} value={mode.value}>
                     {mode.label}
@@ -442,11 +442,11 @@ export function ExpenseModal({
           </div>
 
           {splitMode === "percentage" && (
-            <div className="space-y-3 rounded-xl border p-4">
+            <div className="space-y-3 rounded-xl border border-border p-4">
               <div className="flex items-center justify-between">
                 <Label>Percentages</Label>
                 <span
-                  className={`text-sm font-mono tabular-nums ${
+                  className={`text-lg font-mono tabular-nums ${
                     totalPercentage > 100
                       ? "text-rose-500"
                       : totalPercentage < 100
@@ -491,10 +491,10 @@ export function ExpenseModal({
           )}
 
           {splitMode === "exact" && (
-            <div className="space-y-3 rounded-xl border p-4">
+            <div className="space-y-3 rounded-xl border border-border p-4">
               <div className="flex items-center justify-between">
                 <Label>Exact amounts</Label>
-                <span className="text-sm font-mono tabular-nums text-muted-foreground">
+                <span className="text-lg font-mono tabular-nums text-muted-foreground">
                   {formatMoney(totalExact)} / {formatMoney(totalAmount)}
                 </span>
               </div>
@@ -504,7 +504,7 @@ export function ExpenseModal({
                     {member.user.name}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground font-mono">
+                    <span className="text-muted-foreground font-mono ">
                       {currencySymbol}
                     </span>
                     <input
@@ -540,7 +540,7 @@ export function ExpenseModal({
           )}
 
           {splitMode === "equal" && memberCount > 0 && totalAmount > 0 && (
-            <p className="text-sm text-muted-foreground font-mono tabular-nums">
+            <p className="text-lg text-muted-foreground font-mono tabular-nums">
               {formatMoney(equalShare)} each
               {remainder > 0 && ` · first ${remainder} pay 1¢ more`}
             </p>

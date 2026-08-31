@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { HandCoins, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
+import {
+  Check,
+  HandCoins,
+  Loader2,
+  Pencil,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { addMember } from "@/app/actions/groups";
@@ -12,6 +19,7 @@ import { BalancePill } from "@/components/balance-pill";
 import { Button } from "@/components/ui/button";
 import { CurrencySelect } from "@/components/currency-select";
 import { ExpenseModal } from "@/components/expense-modal";
+import { cn } from "@/lib/utils";
 import type { GroupView, SettlementRow } from "@/lib/types";
 import { useTransition } from "react";
 
@@ -37,7 +45,8 @@ function ExpenseRow({
         <p className="font-semibold truncate">{expense.description}</p>
         <p className="text-muted-foreground">
           {expense.payerName} paid {expense.paidLabel}
-          {expense.nativeLabel && ` (${expense.nativeLabel})`} ·{" "}
+          {expense.nativeLabel &&
+            ` (${expense.nativeLabel}${expense.fxLabel ? ` · ${expense.fxLabel}` : ""})`} ·{" "}
           {expense.dateLabel}
         </p>
       </div>
@@ -63,7 +72,10 @@ function ExpenseRow({
 }
 
 /** Generic delete-affordance for any Activity row (nextjs-review #32): one
- * client component serves every deletable row type via a bound server action. */
+ * client component serves every deletable row type via a bound server action.
+ * Two-step confirm (the phase-14 "(or confirm)" option): first click arms
+ * a 2.5s confirm window (button turns rose), second click deletes;
+ * letting the timer lapse cancels — no accidental one-click deletes. */
 function DeleteRowButton({
   onDelete,
   ariaLabel,
@@ -72,26 +84,38 @@ function DeleteRowButton({
   ariaLabel: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState(false);
+
+  const handleClick = () => {
+    if (!confirming) {
+      setConfirming(true);
+      window.setTimeout(() => setConfirming(false), 2500);
+      return;
+    }
+    setConfirming(false);
+    startTransition(async () => {
+      const result = await onDelete();
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Deleted");
+      }
+    });
+  };
 
   return (
     <Button
       variant="ghost"
       size="icon"
       disabled={pending}
-      aria-label={ariaLabel}
-      onClick={() =>
-        startTransition(async () => {
-          const result = await onDelete();
-          if (result.error) {
-            toast.error(result.error);
-          } else {
-            toast.success("Deleted");
-          }
-        })
-      }
+      aria-label={confirming ? `Confirm ${ariaLabel.toLowerCase()}` : ariaLabel}
+      onClick={handleClick}
+      className={cn(confirming && "text-rose-600 hover:text-rose-700 hover:bg-rose-500/10")}
     >
       {pending ? (
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+      ) : confirming ? (
+        <Check className="h-4 w-4" aria-hidden />
       ) : (
         <Trash2 className="h-4 w-4" />
       )}

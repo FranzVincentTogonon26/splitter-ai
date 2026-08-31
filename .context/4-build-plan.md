@@ -166,9 +166,19 @@ is shown nowhere.
 
 ## 14 Stretch Goals
 
-- [ ] Per-group base currency (`Group.baseCurrency`) instead of global USD
-- [ ] Dark-mode toggle (`next-themes`)
-- [ ] Undo-in-toast (or confirm) for expense delete
-- [ ] Store FX rate/date on each expense for explicit auditability
+- [ ] Per-group base currency (`Group.baseCurrency`) instead of global USD —
+      DEFERRED: it replaces the documented "`amountCents` is always USD"
+      ledger invariant (`.context/2-architecture.md`); needs the architect's
+      go-ahead before implementation
+- [x] Dark-mode toggle (`next-themes`) — `.dark` token set in globals.css,
+      ThemeProvider in layout, sun/moon toggle in header, dark-safe
+      popover surfaces (bg-popover instead of bg-white)
+- [x] Undo-in-toast (or confirm) for expense delete — two-step confirm on
+      `DeleteRowButton` (rose confirm window, 2.5s expiry), no accidental
+      one-click deletes; settlements covered by the same shared button
+- [x] Store FX rate/date on each expense for explicit auditability —
+      `Expense.fxRate`/`fxDate` (null when no conversion), set at save,
+      shown as "· at 0.9200" next to the original amount on expense rows
 - [ ] Production deploy: Postgres provider swap, `clerk env pull --instance
-prod`, webhook registration
+      prod`, webhook registration — needs `clerk auth login` + prod
+      credentials (interactive — build/verification complete locally otherwise)
