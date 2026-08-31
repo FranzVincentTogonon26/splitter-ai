@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { HandCoins, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { addMember } from "@/app/actions/groups";
 import { deleteExpense, settleUp } from "@/app/actions/expenses";
+import { deleteSettlement } from "@/app/actions/settlements";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BalancePill } from "@/components/balance-pill";
 import { Button } from "@/components/ui/button";
 import { CurrencySelect } from "@/components/currency-select";
 import { ExpenseModal } from "@/components/expense-modal";
-import type { GroupView } from "@/lib/types";
+import type { GroupView, SettlementRow } from "@/lib/types";
 import { useTransition } from "react";
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -52,18 +53,23 @@ function ExpenseRow({
         >
           <Pencil className="h-4 w-4" />
         </Button>
-        <DeleteExpenseButton groupId={groupId} expenseId={expense.id} />
+        <DeleteRowButton
+          onDelete={deleteExpense.bind(null, groupId, expense.id)}
+          ariaLabel="Delete expense"
+        />
       </div>
     </div>
   );
 }
 
-function DeleteExpenseButton({
-  groupId,
-  expenseId,
+/** Generic delete-affordance for any Activity row (nextjs-review #32): one
+ * client component serves every deletable row type via a bound server action. */
+function DeleteRowButton({
+  onDelete,
+  ariaLabel,
 }: {
-  groupId: string;
-  expenseId: string;
+  onDelete: () => Promise<{ error?: string }>;
+  ariaLabel: string;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -72,14 +78,14 @@ function DeleteExpenseButton({
       variant="ghost"
       size="icon"
       disabled={pending}
-      aria-label="Delete expense"
+      aria-label={ariaLabel}
       onClick={() =>
         startTransition(async () => {
-          const result = await deleteExpense(groupId, expenseId);
+          const result = await onDelete();
           if (result.error) {
             toast.error(result.error);
           } else {
-            toast.success("Expense deleted");
+            toast.success("Deleted");
           }
         })
       }
@@ -90,6 +96,37 @@ function DeleteExpenseButton({
         <Trash2 className="h-4 w-4" />
       )}
     </Button>
+  );
+}
+
+function SettlementRow({
+  settlement,
+  groupId,
+}: {
+  settlement: SettlementRow;
+  groupId: string;
+}) {
+  return (
+    <div className="flex items-center gap-4 px-5 py-4 border-border">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+        <HandCoins className="h-4 w-4 text-emerald-600" aria-hidden />
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold truncate">
+          {settlement.fromName}{" "}
+          <span className="text-muted-foreground font-normal">paid</span>{" "}
+          {settlement.toName}
+        </p>
+        <p className="text-muted-foreground">{settlement.dateLabel}</p>
+      </div>
+      <span className="font-bold tabular-nums text-emerald-600">
+        {settlement.displayLabel}
+      </span>
+      <DeleteRowButton
+        onDelete={deleteSettlement.bind(null, groupId, settlement.id)}
+        ariaLabel="Delete settlement"
+      />
+    </div>
   );
 }
 
@@ -266,18 +303,26 @@ export default function GroupClient({
       <div className="mt-10 grid gap-10 lg:grid-cols-3">
         <section className="lg:col-span-2 space-y-4 self-start">
           <SectionHeading>Activity</SectionHeading>
-          {groupView.expenses.length === 0 ? (
-            <p className="text-muted-foreground">No expenses yet</p>
+          {groupView.activity.length === 0 ? (
+            <p className="text-muted-foreground">No activity yet</p>
           ) : (
             <div className="rounded-xl border divide-y border-border">
-              {groupView.expenses.map((expense) => (
-                <ExpenseRow
-                  key={expense.id}
-                  expense={expense}
-                  groupId={groupId}
-                  onEdit={() => openExpenseModal(expense)}
-                />
-              ))}
+              {groupView.activity.map((item) =>
+                item.kind === "expense" ? (
+                  <ExpenseRow
+                    key={`expense-${item.data.id}`}
+                    expense={item.data}
+                    groupId={groupId}
+                    onEdit={() => openExpenseModal(item.data)}
+                  />
+                ) : (
+                  <SettlementRow
+                    key={`settlement-${item.data.id}`}
+                    settlement={item.data}
+                    groupId={groupId}
+                  />
+                ),
+              )}
             </div>
           )}
         </section>

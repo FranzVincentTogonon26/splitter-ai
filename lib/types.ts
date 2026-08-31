@@ -54,6 +54,26 @@ export type DebtRow = {
   displayLabel: string;
 };
 
+export type SettlementRow = {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  /** Payer name (or "You"), resolved for display. */
+  fromName: string;
+  /** Payee name (or "You"), resolved for display. */
+  toName: string;
+  /** USD ledger cents — the delete action scopes by this record. */
+  amountCents: number;
+  /** The payment, formatted in the active display currency. */
+  displayLabel: string;
+  dateLabel: string;
+};
+
+/** One entry in the Activity feed: an expense or a settlement, interleaved. */
+export type ActivityItem =
+  | { kind: "expense"; createdAt: Date; data: ExpenseRow }
+  | { kind: "settlement"; createdAt: Date; data: SettlementRow };
+
 export type GroupView = {
   group: Group;
   displayCode: string;
@@ -61,6 +81,8 @@ export type GroupView = {
   yourBalanceCents: number;
   totalCents: number;
   members: MemberRow[];
+  /** Expenses and settlements, interleaved newest-first (phase 13). */
+  activity: ActivityItem[];
   expenses: ExpenseRow[];
   debts: DebtRow[];
 };

@@ -1,0 +1,6 @@
+
+C:\Users\Franz\Desktop\Project Development\AI Related\splitter-ai\lib\queries.ts
+  13:3  warning  'ExpenseRow' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+

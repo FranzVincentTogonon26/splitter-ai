@@ -153,16 +153,16 @@ Motivation: edit/delete an expense after a settle-up and "Who owes whom"
 looks wrong, because the recorded payment silently stays in the math but
 is shown nowhere.
 
-- [ ] "Expenses" section becomes **Activity**: expenses AND settlements
+- [x] "Expenses" section becomes **Activity**: expenses AND settlements
       interleaved, newest first (payment rows: HandCoins icon, "X paid Y",
       amount, date)
-- [ ] Settlements deletable like expenses (`deleteSettlement`,
+- [x] Settlements deletable like expenses (`deleteSettlement`,
       group-scoped) — a bad settle-up can be removed in the UI
-- [ ] Delete button generalized to `DeleteRowButton`: takes a **bound
-      server action** (`deleteExpense.bind(null, groupId, id)`) as a prop, so
-      one client component serves every deletable row type
-- [ ] Invariant: every record that feeds a derived number is visible and
-      removable on screen — balances must be auditable from the UI
+- [x] Delete button generalized to `DeleteRowButton`: takes a **bound
+      server action** (`deleteExpense.bind(null, groupId, id)`) as a prop,
+      so one client component serves every deletable row type
+- [x] Invariant: every record that feeds a derived number is visible and
+      removable on screen — balances are auditable from the UI
 
 ## 14 Stretch Goals
 

@@ -7,9 +7,9 @@ import { displayCents, type DisplayCurrency } from "./fx";
 import { formatDate, formatMoneyIn } from "./format";
 import { simplifyDebts } from "./simplify-debts";
 import type {
+  ActivityItem,
   DashboardGroupCard,
   DashboardView,
-  ExpenseRow,
   GroupView,
   MemberRow,
 } from "./types";
@@ -101,7 +101,7 @@ export async function getGroupView(
   const group = await db.group.findUnique({ where: { id: groupId } });
   if (!group) notFound();
 
-  const [memberRows, expenses, balances] = await Promise.all([
+  const [memberRows, expenses, settlements, balances] = await Promise.all([
     db.groupMember.findMany({
       where: { groupId },
       include: { user: true },
@@ -109,6 +109,10 @@ export async function getGroupView(
     db.expense.findMany({
       where: { groupId },
       include: { splits: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.settlement.findMany({
+      where: { groupId },
       orderBy: { createdAt: "desc" },
     }),
     netBalances(groupId),
@@ -126,42 +130,59 @@ export async function getGroupView(
   const nameOf = (id: string) =>
     id === userId ? "You" : (nameByUser.get(id) ?? "Unknown");
 
-  const expensesView: ExpenseRow[] = expenses.map((e) => {
-    // Preserve the original entry (e.g. "€25.00") when it differs from the
-    // display currency, so rows show original + display equivalent.
-    const nativeLabel =
-      e.currency === display.code
-        ? null
-        : formatMoneyIn(e.currency, e.nativeAmountCents);
-    const yourShareCents =
-      e.splits.find((s) => s.userId === userId)?.amountCents ?? 0;
-
-    return {
-      id: e.id,
-      description: e.description,
-      payerName: nameOf(e.paidById),
-      paidById: e.paidById,
-      amountCents: e.amountCents,
-      paidLabel: fm(e.amountCents),
-      nativeLabel,
-      dateLabel: formatDate(e.createdAt),
-      yourShareCents,
-      yourShareLabel: fm(yourShareCents),
-      isRecent: Date.now() - e.createdAt.getTime() < 60_000,
-      // Edit-prefill data (phase 12)
-      currency: e.currency,
-      nativeAmountCents: e.nativeAmountCents,
-      splits: e.splits.map((s) => ({
-        userId: s.userId,
-        amountCents: s.amountCents,
-      })),
-    };
-  });
-
   const members: MemberRow[] = memberRows.map((m) => ({
     user: m.user,
     role: m.role === "admin" ? "admin" : "member",
   }));
+
+  // Activity feed (phase 13): expenses and settlements interleaved,
+  // newest first. Both are the facts that feed the balance math, so both
+  // are visible and removable on screen.
+  const activity: ActivityItem[] = [
+    ...expenses.map<ActivityItem>((e) => ({
+      kind: "expense" as const,
+      createdAt: e.createdAt,
+      data: {
+        id: e.id,
+        description: e.description,
+        payerName: nameOf(e.paidById),
+        paidById: e.paidById,
+        amountCents: e.amountCents,
+        paidLabel: fm(e.amountCents),
+        nativeLabel:
+          e.currency === display.code
+            ? null
+            : formatMoneyIn(e.currency, e.nativeAmountCents),
+        dateLabel: formatDate(e.createdAt),
+        yourShareCents:
+          e.splits.find((s) => s.userId === userId)?.amountCents ?? 0,
+        yourShareLabel: fm(
+          e.splits.find((s) => s.userId === userId)?.amountCents ?? 0,
+        ),
+        isRecent: Date.now() - e.createdAt.getTime() < 60_000,
+        currency: e.currency,
+        nativeAmountCents: e.nativeAmountCents,
+        splits: e.splits.map((s) => ({
+          userId: s.userId,
+          amountCents: s.amountCents,
+        })),
+      },
+    })),
+    ...settlements.map<ActivityItem>((s) => ({
+      kind: "settlement" as const,
+      createdAt: s.createdAt,
+      data: {
+        id: s.id,
+        fromUserId: s.fromUserId,
+        toUserId: s.toUserId,
+        fromName: nameOf(s.fromUserId),
+        toName: nameOf(s.toUserId),
+        amountCents: s.amountCents,
+        displayLabel: fm(s.amountCents),
+        dateLabel: formatDate(s.createdAt),
+      },
+    })),
+  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return {
     group,
@@ -170,7 +191,11 @@ export async function getGroupView(
     yourBalanceCents: dc(balances.get(userId) ?? 0),
     totalCents: expenses.reduce((sum, e) => sum + dc(e.amountCents), 0),
     members,
-    expenses: expensesView,
+    activity,
+    // expenses kept for anything that still wants the flat list.
+    expenses: activity
+      .filter((item): item is Extract<ActivityItem, { kind: "expense" }> => item.kind === "expense")
+      .map((item) => item.data),
     debts: simplifyDebts(balances).map((d) => ({
       // amountCents stays in USD ledger cents — settleUp validates against
       // the USD ledger; displayLabel is what the UI renders.
