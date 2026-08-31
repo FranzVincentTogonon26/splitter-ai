@@ -111,16 +111,16 @@ export default function Home() {
 
       {/* Hero */}
       <section className="max-w-5xl mx-auto w-full px-6 pt-16 md:pt-24 pb-8 text-center relative z-10">
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700">
           Split expenses,
           <br />
           <span className="text-primary">skip the mental math.</span>
         </h1>
-        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed">
+        <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 [animation-delay:150ms]">
           Track shared costs in any currency. Splitter nets it all down to the
           fewest possible payments.
         </p>
-        <div className="mt-8">
+        <div className="mt-8 animate-in fade-in slide-in-from-bottom-6 duration-700 [animation-delay:300ms]">
           <StartButton />
         </div>
       </section>
@@ -128,7 +128,7 @@ export default function Home() {
       {/* Proof: 5 IOUs → 2 payments */}
       <section className="max-w-5xl mx-auto w-full px-6 py-12 md:py-16 relative z-10">
         <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-4">
-          <div className="w-full max-w-md -rotate-1 hover:rotate-0 transition-transform">
+          <div className="w-full max-w-md -rotate-1 hover:rotate-0 transition-transform duration-300 animate-in fade-in slide-in-from-bottom-6 [animation-duration:700ms] [animation-delay:400ms]">
             <div className="rounded-xl border bg-card shadow-sm border-border">
               <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <h2 className="font-bold">After the trip</h2>
@@ -162,8 +162,8 @@ export default function Home() {
             aria-hidden
           />
 
-          <div className="w-full max-w-sm rotate-1 hover:rotate-0 transition-transform">
-            <div className="rounded-xl border bg-card shadow-sm border-border">
+          <div className="w-full max-w-sm rotate-1 hover:rotate-0 transition-transform duration-300 animate-in fade-in slide-in-from-bottom-6 [animation-duration:700ms] [animation-delay:550ms]">
+            <div className="rounded-xl border bg-card shadow-md border-border">
               <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <h2 className="font-bold">With Splitter</h2>
                 <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
@@ -199,15 +199,16 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section className="w-full bg-muted py-16 md:py-24 relative z-10">
+      <section className="w-full bg-muted/40 py-16 md:py-24 relative z-10">
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid md:grid-cols-3 gap-6">
-            {features.map((f) => (
+            {features.map((f, i) => (
               <div
                 key={f.title}
-                className="rounded-xl border bg-card p-6 border-border"
+                className="group rounded-xl border bg-card p-6 border-border transition-all duration-300 hover:-translate-y-1 hover:shadow-md animate-in fade-in slide-in-from-bottom-4 duration-700"
+                style={{ animationDelay: `${600 + i * 120}ms` }}
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 transition-transform duration-300 group-hover:scale-110">
                   <f.icon className="h-5 w-5 text-primary" aria-hidden />
                 </span>
                 <h3 className="mt-4 font-bold">{f.title}</h3>
@@ -240,7 +241,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="w-full bg-muted py-16 md:py-24 relative z-10">
+      <section className="w-full bg-muted/40 py-16 md:py-24 relative z-10">
         <div className="max-w-5xl mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
             Ready to stop doing math at dinner?
