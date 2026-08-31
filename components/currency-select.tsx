@@ -30,12 +30,13 @@ export function CurrencySelect({
   const searchParams = useSearchParams();
   const value = searchParams.get("currency") ?? defaultValue;
 
-  const onChange = (code: string) => {
+  const onChange = (code: string | null) => {
+    const next = code ?? "USD";
     const params = new URLSearchParams(searchParams.toString());
-    if (code === "USD") {
+    if (next === "USD") {
       params.delete("currency");
     } else {
-      params.set("currency", code);
+      params.set("currency", next);
     }
     const query = params.toString();
     router.push(query ? `${pathname}?${query}` : pathname);

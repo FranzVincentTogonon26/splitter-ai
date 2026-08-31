@@ -101,6 +101,17 @@ export function ExpenseModal({
   const [aiPending, startAiTransition] = React.useTransition();
   const [aiError, setAiError] = React.useState("");
 
+  // Selects render labels through an items map — never raw userIds.
+  const payerItems = Object.fromEntries(
+    members.map((m) => [
+      m.user.id,
+      m.user.id === currentUserId ? `${m.user.name} (You)` : m.user.name,
+    ]),
+  );
+  const modeItems = Object.fromEntries(
+    SPLIT_MODES.map((m) => [m.value as string, m.label]),
+  );
+
   // The AI fills the same fields manual entry uses — one validation path.
   const handleAiParse = () => {
     setAiError("");
@@ -283,7 +294,12 @@ export function ExpenseModal({
                 required
                 className="flex-1  border-border p-2 bg-transparent  focus:outline-none focus:ring-0"
               />
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select
+                value={currency}
+                onValueChange={(v) => {
+                  if (v !== null) setCurrency(v);
+                }}
+              >
                 <SelectTrigger className="w-24 gap-1 border-border bg-transparent px-1 shadow-none font-semibold focus:ring-0 focus:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
@@ -300,9 +316,15 @@ export function ExpenseModal({
 
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base">
             Paid by
-            <Select value={paidBy} onValueChange={setPaidBy}>
+            <Select
+              value={paidBy}
+              onValueChange={(v) => {
+                if (v !== null) setPaidBy(v);
+              }}
+              items={payerItems}
+            >
               <SelectTrigger className="w-auto gap-1 border-none bg-transparent px-1 shadow-none text-base font-semibold text-primary focus:ring-0 focus:ring-offset-0">
-                <SelectValue placeholder="Select payer" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white border-border">
                 {members.map((m) => (
@@ -317,6 +339,7 @@ export function ExpenseModal({
             <Select
               value={splitMode}
               onValueChange={(v) => {
+                if (v === null) return;
                 const mode = v as SplitMode;
                 setSplitMode(mode);
                 // Splitwise-style: prefill from the current equal shares so
@@ -333,6 +356,7 @@ export function ExpenseModal({
                   );
                 }
               }}
+              items={modeItems}
             >
               <SelectTrigger className="w-auto gap-1 border-none bg-transparent px-1 shadow-none text-base font-semibold text-primary focus:ring-0 focus:ring-offset-0">
                 <SelectValue />

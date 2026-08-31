@@ -1,44 +1,31 @@
 "use client";
 
 import * as React from "react";
+import { Avatar as AvatarPrimitive } from "@base-ui-components/react/avatar";
 import { cn } from "@/lib/utils";
 
-const Avatar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)}
-      {...props}
-    />
-  )
-);
+const Avatar = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Root
+    ref={ref}
+    className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)}
+    {...props}
+  />
+));
 Avatar.displayName = "Avatar";
 
-const AvatarImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<HTMLImageElement>>(
-  ({ className, alt = "", ...props }, ref) => {
-    const [status, setStatus] = React.useState<"loading" | "loaded" | "error">(
-      props.src ? "loading" : "error",
-    );
-
-    // No image (or failed load) renders nothing, so the fallback shows.
-    if (!props.src || status === "error") return null;
-
-    return (
-      <img
-        ref={ref}
-        alt={alt}
-        {...props}
-        className={cn(
-          "relative z-10 aspect-square h-full w-full object-cover transition-opacity",
-          status === "loaded" ? "opacity-100" : "opacity-0",
-          className,
-        )}
-        onLoad={() => setStatus("loaded")}
-        onError={() => setStatus("error")}
-      />
-    );
-  }
-);
+const AvatarImage = React.forwardRef<
+  HTMLImageElement,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Image
+    ref={ref}
+    className={cn("relative z-10 aspect-square h-full w-full object-cover", className)}
+    {...props}
+  />
+));
 AvatarImage.displayName = "AvatarImage";
 
 // Avatar fallback chips get a stable "random" color: hashed from the user id,
@@ -65,21 +52,19 @@ function colorForSeed(seed: string): string {
 
 const AvatarFallback = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { seed?: string }
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback> & { seed?: string }
 >(({ className, seed, children, ...props }, ref) => (
-  <div
+  <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
       "absolute inset-0 flex h-full w-full items-center justify-center rounded-full text-sm font-semibold",
-      seed
-        ? cn("text-white", colorForSeed(seed))
-        : "bg-muted text-muted-foreground",
+      seed ? cn("text-white", colorForSeed(seed)) : "bg-muted text-muted-foreground",
       className,
     )}
     {...props}
   >
     {children}
-  </div>
+  </AvatarPrimitive.Fallback>
 ));
 AvatarFallback.displayName = "AvatarFallback";
 

@@ -97,12 +97,15 @@ with pictures, not longer prompts:
 
 ## 09 Design System & Theming
 
-- [ ] shadcn/ui migration (base-nova / Base UI): buttons, cards, dialog,
-      selects, checkbox, badges, avatars, sonner
-- [ ] Clerk modals themed via `@clerk/ui` shadcn theme
-- [ ] tweakcn theme applied; fonts loaded via `next/font` and wired into
-      `@theme inline`
-- [ ] 💸 favicon (`app/icon.svg`)
+- [x] shadcn/ui migration (base-nova / Base UI): buttons, cards, dialog,
+      selects, checkbox, badges, avatars, sonner (Radix removed from
+      package.json entirely; selects render labels via `items` maps)
+- [x] Clerk modals themed via `@clerk/ui` shadcn theme (ClerkProvider
+      appearance)
+- [x] tweakcn theme applied; fonts loaded via `next/font` and wired into
+      `@theme inline` (full token set: popover, destructive, input, ring,
+      chart, radius scale)
+- [x] 💸 favicon (`app/icon.svg`)
 
 ## 10 Landing Page
 
