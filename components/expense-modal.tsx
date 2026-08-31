@@ -23,33 +23,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CURRENCIES } from "@/lib/currencies";
 import { formatMoney } from "@/lib/format";
 import { equalSplits, type SplitMode } from "@/lib/splits";
 import type { GroupView } from "@/lib/types";
-
-// The 20 ECB currencies (phase 07 converts at save time via frankfurter.dev).
-const CURRENCIES = [
-  { code: "USD", symbol: "$" },
-  { code: "EUR", symbol: "€" },
-  { code: "GBP", symbol: "£" },
-  { code: "JPY", symbol: "¥" },
-  { code: "INR", symbol: "₹" },
-  { code: "CNY", symbol: "¥" },
-  { code: "CAD", symbol: "C$" },
-  { code: "AUD", symbol: "A$" },
-  { code: "CHF", symbol: "CHF" },
-  { code: "SGD", symbol: "S$" },
-  { code: "HKD", symbol: "HK$" },
-  { code: "KRW", symbol: "₩" },
-  { code: "BRL", symbol: "R$" },
-  { code: "MXN", symbol: "MX$" },
-  { code: "ZAR", symbol: "R" },
-  { code: "NOK", symbol: "kr" },
-  { code: "SEK", symbol: "kr" },
-  { code: "DKK", symbol: "kr" },
-  { code: "PLN", symbol: "zł" },
-  { code: "CZK", symbol: "Kč" },
-];
 
 const SPLIT_MODES: { value: SplitMode; label: string }[] = [
   { value: "equal", label: "equally" },
@@ -135,6 +112,8 @@ export function ExpenseModal({
     formData.set("amount", amount);
     formData.set("paidBy", paidBy);
     formData.set("splitMode", splitMode);
+    // The entry currency — addExpense converts once to USD at save time.
+    formData.set("currency", currency);
     // Display order: leftover cents land on the first rows in the list.
     selectedMemberObjects.forEach((m) => {
       formData.append("members", m.user.id);

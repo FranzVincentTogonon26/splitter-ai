@@ -1,4 +1,9 @@
-import type { DebtRow } from "./types";
+/** One minimized transfer — currency-agnostic USD ledger cents. */
+export type SimplifiedDebt = {
+  fromUserId: string;
+  toUserId: string;
+  amountCents: number;
+};
 
 /**
  * Greedy debt minimization: repeatedly match the largest debtor with the
@@ -10,7 +15,9 @@ import type { DebtRow } from "./types";
  * Deterministic: participants are matched by amount descending, ties broken
  * by insertion order (i.e. member order in the balances map).
  */
-export function simplifyDebts(balances: Map<string, number>): DebtRow[] {
+export function simplifyDebts(
+  balances: Map<string, number>,
+): SimplifiedDebt[] {
   const debtors = [...balances.entries()]
     .filter(([, cents]) => cents < 0)
     .map(([id, cents]) => ({ id, cents: -cents }))
@@ -20,7 +27,7 @@ export function simplifyDebts(balances: Map<string, number>): DebtRow[] {
     .map(([id, cents]) => ({ id, cents }))
     .sort((a, b) => b.cents - a.cents);
 
-  const debts: DebtRow[] = [];
+  const debts: SimplifiedDebt[] = [];
   let di = 0;
   let ci = 0;
   while (di < debtors.length && ci < creditors.length) {

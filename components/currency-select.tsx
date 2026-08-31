@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
 import {
   Select,
   SelectContent,
@@ -8,21 +9,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CURRENCIES } from "@/lib/currencies";
 import { cn } from "@/lib/utils";
 
-// Display currencies (entry currencies live in the expense modal, phase 07
-// expands both to the full 20-currency ECB list).
-const CURRENCIES = [
-  { code: "USD", name: "US Dollar" },
-  { code: "EUR", name: "Euro" },
-  { code: "GBP", name: "British Pound" },
-  { code: "JPY", name: "Japanese Yen" },
-  { code: "INR", name: "Indian Rupee" },
-  { code: "CAD", name: "Canadian Dollar" },
-  { code: "AUD", name: "Australian Dollar" },
-  { code: "CHF", name: "Swiss Franc" },
-];
-
+/**
+ * The display-currency switcher. Selecting a currency updates the `?currency=`
+ * URL param, which the server components read to convert balances, debts,
+ * totals, and shares at today's rate (USD is always available; other codes
+ * need live frankfurter.dev rates).
+ */
 export function CurrencySelect({
   defaultValue = "USD",
   className,
@@ -30,10 +25,24 @@ export function CurrencySelect({
   defaultValue?: string;
   className?: string;
 }) {
-  const [value, setValue] = useState(defaultValue);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const value = searchParams.get("currency") ?? defaultValue;
+
+  const onChange = (code: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (code === "USD") {
+      params.delete("currency");
+    } else {
+      params.set("currency", code);
+    }
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  };
 
   return (
-    <Select value={value} onValueChange={setValue}>
+    <Select value={value} onValueChange={onChange}>
       <SelectTrigger
         className={cn(
           "w-auto gap-1 border-none bg-transparent px-2 shadow-none text-base font-semibold focus:ring-0 focus:ring-offset-0",

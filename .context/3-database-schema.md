@@ -23,9 +23,11 @@ Money is always integer **cents**. `User.id` is ALWAYS the Clerk `userId`
 - `id`: String @id @default(cuid())
 - `groupId`: String
 - `paidById`: String  (User who paid the bill)
-- `amountCents`: Int
+- `amountCents`: Int  (USD — the ledger currency; balances math on this)
 - `description`: String
-- `splits`: ExpenseSplit[]  (one row per member who owes a share)
+- `currency`: String  (entry currency, one of the 20 ECB codes; default "USD")
+- `nativeAmountCents`: Int  (the amount as entered in `currency`)
+- `splits`: ExpenseSplit[]  (one row per member who owes a share, in USD cents)
 - `createdAt`: DateTime
 
 **5. ExpenseSplit** (who owes what for a given expense)

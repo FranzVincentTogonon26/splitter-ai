@@ -4,6 +4,8 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/lib/db";
+import { isSupportedCurrency } from "@/lib/currencies";
+import { getRates, perUsdFor, convertToUsd } from "@/lib/fx";
 import { netBalances } from "@/lib/queries";
 import { computeSplits, splitsFromFormData } from "@/lib/splits";
 
@@ -24,7 +26,9 @@ export async function addExpense(
   }
 
   const description = String(formData.get("description") ?? "").trim();
-  const amountCents = Math.round(Number(formData.get("amount")) * 100);
+  const currencyField = String(formData.get("currency") ?? "USD");
+  const currency = isSupportedCurrency(currencyField) ? currencyField : "USD";
+  const nativeAmountCents = Math.round(Number(formData.get("amount")) * 100);
   const paidById = String(formData.get("paidBy") ?? "");
   const { mode, memberIds: splitIds, percentages, exactCents } =
     splitsFromFormData(formData);
@@ -32,23 +36,38 @@ export async function addExpense(
   if (!description) return { error: "Enter a description" };
   if (!memberIds.includes(paidById)) return { error: "Choose who paid" };
 
-  const result = computeSplits({
-    amountCents,
+  // Validate + split in the currency the user entered — the split math is
+  // currency-agnostic integer-cent math (lib/splits.ts).
+  const native = computeSplits({
+    amountCents: nativeAmountCents,
     memberIds: splitIds,
     allowedIds: memberIds,
     mode,
     percentages,
     exactCents,
   });
-  if (!result.ok) return { error: result.error };
+  if (!native.ok) return { error: native.error };
+
+  // Convert once to USD at today's rate (USD itself never hits the network).
+  const rates = currency === "USD" ? null : await getRates();
+  const usd = convertToUsd({
+    nativeAmountCents,
+    splits: native.splits,
+    perUsd: perUsdFor(rates, currency),
+  });
+  if (!usd.ok) return { error: usd.error };
 
   await db.expense.create({
     data: {
       groupId,
       paidById,
       description,
-      amountCents,
-      splits: { create: result.splits },
+      // amountCents + splits are ALWAYS USD (the ledger currency); the
+      // original entry is preserved in currency + nativeAmountCents.
+      amountCents: usd.amountCents,
+      currency,
+      nativeAmountCents,
+      splits: { create: usd.splits },
     },
   });
 

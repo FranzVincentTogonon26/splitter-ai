@@ -10,7 +10,6 @@ import { BalancePill } from "@/components/balance-pill";
 import { Button } from "@/components/ui/button";
 import { CurrencySelect } from "@/components/currency-select";
 import { ExpenseModal } from "@/components/expense-modal";
-import { formatMoney } from "@/lib/format";
 import type { GroupView } from "@/lib/types";
 import { useTransition } from "react";
 
@@ -33,11 +32,13 @@ function ExpenseRow({
       <div className="flex-1 min-w-0">
         <p className="font-semibold truncate">{expense.description}</p>
         <p className="text-muted-foreground">
-          {expense.payerName} paid {expense.paidLabel} · {expense.dateLabel}
+          {expense.payerName} paid {expense.paidLabel}
+          {expense.nativeLabel && ` (${expense.nativeLabel})`} ·{" "}
+          {expense.dateLabel}
         </p>
       </div>
       <p className="text-muted-foreground whitespace-nowrap">
-        your share {formatMoney(expense.yourShareCents)}
+        your share {expense.yourShareLabel}
       </p>
       <div className="flex items-center gap-1 shrink-0">
         <Button
@@ -128,7 +129,7 @@ function DebtRow({
               : "text-rose-600"
           }`}
         >
-          {formatMoney(debt.amountCents)}
+          {debt.displayLabel}
         </span>
         {(debt.fromUserId === currentUserId ||
           debt.toUserId === currentUserId) && (
@@ -189,8 +190,16 @@ export default function GroupClient({
                 </Avatar>
               ))}
             </div>
-            <BalancePill cents={groupView.yourBalanceCents} />
+            <BalancePill
+              cents={groupView.yourBalanceCents}
+              currencyCode={groupView.displayCode}
+            />
           </div>
+          {groupView.fellBackToUsd && (
+            <p className="text-sm text-amber-600">
+              Exchange rates unavailable — showing amounts in USD.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <CurrencySelect />

@@ -47,6 +47,13 @@ model Expense {
   description String
   createdAt   DateTime       @default(now())
 
+  // Multi-currency (phase 07): the amount is entered in `currency` and
+  // converted once to USD at save time. `amountCents` is ALWAYS USD (the
+  // ledger currency); `nativeAmountCents` preserves what the user actually
+  // entered so rows can display the original amount.
+  currency          String   @default("USD")
+  nativeAmountCents Int      @default(0)
+
   group  Group         @relation(fields: [groupId], references: [id])
   payer  User          @relation("PaidExpenses", fields: [paidById], references: [id])
   splits ExpenseSplit[]

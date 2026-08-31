@@ -1,11 +1,13 @@
-import { formatMoney } from "@/lib/format";
+import { formatMoneyIn } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function BalancePill({
   cents,
+  currencyCode = "USD",
   className,
 }: {
   cents: number;
+  currencyCode?: string;
   className?: string;
 }) {
   const settled = cents === 0;
@@ -27,8 +29,8 @@ export function BalancePill({
       {settled
         ? "settled up"
         : owedToYou
-          ? `you are owed ${formatMoney(cents)}`
-          : `you owe ${formatMoney(-cents)}`}
+          ? `you are owed ${formatMoneyIn(currencyCode, cents)}`
+          : `you owe ${formatMoneyIn(currencyCode, -cents)}`}
     </span>
   );
 }

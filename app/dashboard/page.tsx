@@ -8,18 +8,25 @@ import { BalancePill } from "@/components/balance-pill";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CurrencySelect } from "@/components/currency-select";
-import { formatMoney } from "@/lib/format";
+import { resolveDisplay } from "@/lib/fx";
+import { formatMoneyIn } from "@/lib/format";
 import { ensureUser } from "@/lib/ensure-user";
 import { getDashboard } from "@/lib/queries";
 import type { DashboardGroupCard } from "@/lib/types";
 
-function GroupCard({ card }: { card: DashboardGroupCard }) {
+function GroupCard({
+  card,
+  displayCode,
+}: {
+  card: DashboardGroupCard;
+  displayCode: string;
+}) {
   return (
     <Card className="h-full rounded-xl hover:shadow-md  border-border">
       <CardContent className="flex flex-col gap-6 p-6">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-xl font-bold truncate">{card.group.name}</h3>
-          <BalancePill cents={card.yourBalanceCents} />
+          <BalancePill cents={card.yourBalanceCents} currencyCode={displayCode} />
         </div>
         <div className="flex items-center justify-between gap-3">
           <div className="flex -space-x-2">
@@ -36,7 +43,7 @@ function GroupCard({ card }: { card: DashboardGroupCard }) {
             )}
           </div>
           <p className="text-lg text-muted-foreground whitespace-nowrap">
-            {formatMoney(card.totalCents)} total
+            {formatMoneyIn(displayCode, card.totalCents)} total
           </p>
         </div>
       </CardContent>
@@ -44,14 +51,25 @@ function GroupCard({ card }: { card: DashboardGroupCard }) {
   );
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ currency?: string }>;
+}) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
   const user = await ensureUser();
   if (!user) redirect("/sign-in");
   const firstName = user.name.split(" ")[0];
-  const dashboard = await getDashboard(userId, firstName);
+
+  // The ?currency= param drives display conversion; unknown codes or a rates
+  // outage degrade to USD (flagged so we can say why).
+  const { currency } = await searchParams;
+  const display = await resolveDisplay(currency);
+  const dashboard = await getDashboard(userId, firstName, display);
+  const fm = (usdCents: number) =>
+    formatMoneyIn(dashboard.displayCode, usdCents);
 
   return (
     <div className="flex flex-col flex-1 w-full max-w-6xl mx-auto px-4 py-8 md:py-12">
@@ -62,12 +80,18 @@ export default async function DashboardPage() {
         <CurrencySelect />
       </div>
 
+      {display.fellBackToUsd && (
+        <p className="mt-3 text-sm text-amber-600">
+          Exchange rates unavailable — showing amounts in USD.
+        </p>
+      )}
+
       <div className="mt-8 grid grid-cols-2 gap-4 max-w-[480px]">
         <Card className="rounded-xl   border-border">
           <CardContent className="p-6">
             <p className="text-lg text-muted-foreground">You are owed</p>
             <p className="mt-2 text-3xl font-semibold text-emerald-600 tabular-nums">
-              {formatMoney(dashboard.totalOwedToYouCents)}
+              {fm(dashboard.totalOwedToYouCents)}
             </p>
           </CardContent>
         </Card>
@@ -75,7 +99,7 @@ export default async function DashboardPage() {
           <CardContent className="p-6">
             <p className="text-lg text-muted-foreground">You owe</p>
             <p className="mt-2 text-3xl font-semibold text-rose-600 tabular-nums">
-              {formatMoney(dashboard.totalYouOweCents)}
+              {fm(dashboard.totalYouOweCents)}
             </p>
           </CardContent>
         </Card>
@@ -101,7 +125,7 @@ export default async function DashboardPage() {
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           {dashboard.groups.map((card) => (
             <Link key={card.group.id} href={`/groups/${card.group.id}`}>
-              <GroupCard card={card} />
+              <GroupCard card={card} displayCode={dashboard.displayCode} />
             </Link>
           ))}
         </div>
