@@ -203,3 +203,85 @@ export function splitsFromFormData(formData: FormData): {
   }
   return { mode, memberIds, percentages, exactCents };
 }
+
+/**
+ * Phase 12 edit prefill — the reverse of convertToUsd (lib/fx.ts): stored
+ * USD splits are projected back onto the entered-currency total with the
+ * same proportional largest-remainder apportionment, so the reconstructed
+ * shares sum EXACTLY to nativeAmountCents (never floats, never drift).
+ */
+export function reverseConvertSplits(input: {
+  nativeAmountCents: number;
+  usdSplits: readonly SplitCents[];
+}): SplitCents[] {
+  const { nativeAmountCents, usdSplits } = input;
+  const usdTotal = usdSplits.reduce((a, s) => a + s.amountCents, 0);
+  if (usdSplits.length === 0 || usdTotal <= 0 || nativeAmountCents <= 0) {
+    return usdSplits.map((s) => ({ userId: s.userId, amountCents: 0 }));
+  }
+
+  const exactShares = usdSplits.map(
+    (s) => (s.amountCents / usdTotal) * nativeAmountCents,
+  );
+  const shares = exactShares.map((v) => Math.floor(v));
+  let leftover = nativeAmountCents - shares.reduce((a, b) => a + b, 0);
+  const byRemainder = exactShares
+    .map((_, i) => i)
+    .sort((a, b) => (exactShares[b] % 1) - (exactShares[a] % 1));
+  for (let k = 0; leftover > 0; k++, leftover--) {
+    shares[byRemainder[k % byRemainder.length]] += 1;
+  }
+
+  return usdSplits.map((s, i) => ({ userId: s.userId, amountCents: shares[i] }));
+}
+
+/** True when `splits` is exactly the deterministic equal distribution. */
+export function isEqualSplits(
+  splits: readonly SplitCents[],
+  memberIds: readonly string[],
+  amountCents: number,
+): boolean {
+  if (splits.length !== memberIds.length) return false;
+  const expected = new Map(
+    equalSplits(amountCents, memberIds).map((s) => [s.userId, s.amountCents]),
+  );
+  return splits.every((s) => expected.get(s.userId) === s.amountCents);
+}
+
+export type SplitPrefill = {
+  mode: SplitMode;
+  exactAmounts: Record<string, number>;
+  memberIds: string[];
+};
+
+/**
+ * Reconstruct the modal state for an edited expense: equal-ish splits reopen
+ * in "equally" mode over their original participants; anything custom
+ * reopens as exact amounts in the entered currency. Zero-share members are
+ * dropped from the selection (their share was zero; re-adding them would
+ * change the split on save).
+ */
+export function prefillFromSplits(input: {
+  nativeAmountCents: number;
+  usdSplits: readonly SplitCents[];
+}): SplitPrefill {
+  const native = reverseConvertSplits(input);
+  const participants = native.filter((s) => s.amountCents > 0);
+  const participantIds = participants.map((s) => s.userId);
+
+  if (
+    participantIds.length > 0 &&
+    isEqualSplits(participants, participantIds, input.nativeAmountCents)
+  ) {
+    return { mode: "equal", exactAmounts: {}, memberIds: participantIds };
+  }
+
+  return {
+    mode: "exact",
+    exactAmounts: Object.fromEntries(
+      native.map((s) => [s.userId, s.amountCents]),
+    ),
+    memberIds:
+      participantIds.length > 0 ? participantIds : native.map((s) => s.userId),
+  };
+}

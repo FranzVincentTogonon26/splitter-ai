@@ -39,6 +39,10 @@ export type ExpenseRow = {
   /** The viewer's split, in the active display currency. */
   yourShareLabel: string;
   isRecent: boolean;
+  // Edit-prefill data (phase 12): the original entry and its USD splits.
+  currency: string;
+  nativeAmountCents: number;
+  splits: { userId: string; amountCents: number }[];
 };
 
 export type DebtRow = {

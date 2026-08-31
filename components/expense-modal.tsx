@@ -4,7 +4,7 @@ import * as React from "react";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-import { addExpense } from "@/app/actions/expenses";
+import { addExpense, updateExpense } from "@/app/actions/expenses";
 import { parseExpenseText } from "@/app/actions/ai";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,11 @@ import {
 } from "@/components/ui/select";
 import { CURRENCIES } from "@/lib/currencies";
 import { formatMoney } from "@/lib/format";
-import { equalSplits, type SplitMode } from "@/lib/splits";
+import {
+  equalSplits,
+  prefillFromSplits,
+  type SplitMode,
+} from "@/lib/splits";
 import type { GroupView } from "@/lib/types";
 
 const SPLIT_MODES: { value: SplitMode; label: string }[] = [
@@ -78,26 +82,43 @@ export function ExpenseModal({
 }: ExpenseModalProps) {
   const [isPending, startTransition] = React.useTransition();
 
+  // Edit prefill (phase 12): reconstruct the entered-currency shares from
+  // the stored USD splits — equal-ish splits reopen in "equally" mode,
+  // anything custom as exact amounts. The parent keys this modal by
+  // editingExpense id, so these initializers run on every open.
+  const prefill = editingExpense
+    ? prefillFromSplits({
+        nativeAmountCents: editingExpense.nativeAmountCents,
+        usdSplits: editingExpense.splits,
+      })
+    : null;
+
   const [description, setDescription] = React.useState(
     editingExpense?.description ?? "",
   );
   const [amount, setAmount] = React.useState(
-    editingExpense ? (editingExpense.amountCents / 100).toString() : "",
+    editingExpense
+      ? (editingExpense.nativeAmountCents / 100).toString()
+      : "",
   );
-  const [currency, setCurrency] = React.useState("USD");
+  const [currency, setCurrency] = React.useState(
+    editingExpense?.currency ?? "USD",
+  );
   const [paidBy, setPaidBy] = React.useState(
     editingExpense?.paidById ?? currentUserId,
   );
   const [selectedMembers, setSelectedMembers] = React.useState<string[]>(
-    members.map((m) => m.user.id),
+    prefill?.memberIds ?? members.map((m) => m.user.id),
   );
-  const [splitMode, setSplitMode] = React.useState<SplitMode>("equal");
+  const [splitMode, setSplitMode] = React.useState<SplitMode>(
+    prefill?.mode ?? "equal",
+  );
   const [percentages, setPercentages] = React.useState<Record<string, number>>(
     {},
   );
   const [exactAmounts, setExactAmounts] = React.useState<
     Record<string, number>
-  >({});
+  >(prefill?.exactAmounts ?? {});
   const [aiText, setAiText] = React.useState("");
   const [aiPending, startAiTransition] = React.useTransition();
   const [aiError, setAiError] = React.useState("");
@@ -136,9 +157,18 @@ export function ExpenseModal({
 
   const [state, formAction] = React.useActionState(
     async (_: unknown, formData: FormData) => {
-      const result = await addExpense(groupId, { error: "" }, formData);
+      // One modal, one validation path: updateExpense re-runs the identical
+      // server-side validation + conversion as addExpense.
+      const result = editingExpense
+        ? await updateExpense(
+            groupId,
+            editingExpense.id,
+            { error: "" },
+            formData,
+          )
+        : await addExpense(groupId, { error: "" }, formData);
       if (result.ok) {
-        toast.success("Expense added");
+        toast.success(editingExpense ? "Expense updated" : "Expense added");
       } else if (result.error) {
         toast.error(result.error);
       }

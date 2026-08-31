@@ -191,8 +191,21 @@ export default function GroupClient({
   currentUserId: string;
 }) {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<
+    GroupView["expenses"][0] | null
+  >(null);
   const [addMemberError, setAddMemberError] = useState("");
   const [isAddMemberPending, startAddMemberTransition] = useTransition();
+
+  const openExpenseModal = (expense: GroupView["expenses"][0] | null) => {
+    setEditingExpense(expense);
+    setIsExpenseModalOpen(true);
+  };
+
+  const closeExpenseModal = () => {
+    setIsExpenseModalOpen(false);
+    setEditingExpense(null);
+  };
 
   const handleAddMember = (formData: FormData) => {
     setAddMemberError("");
@@ -244,7 +257,7 @@ export default function GroupClient({
         </div>
         <div className="flex items-center gap-2">
           <CurrencySelect />
-          <Button type="button" onClick={() => setIsExpenseModalOpen(true)}>
+          <Button type="button" onClick={() => openExpenseModal(null)}>
             Add expense
           </Button>
         </div>
@@ -262,7 +275,7 @@ export default function GroupClient({
                   key={expense.id}
                   expense={expense}
                   groupId={groupId}
-                  onEdit={() => setIsExpenseModalOpen(true)}
+                  onEdit={() => openExpenseModal(expense)}
                 />
               ))}
             </div>
@@ -349,12 +362,16 @@ export default function GroupClient({
       </div>
 
       <ExpenseModal
+        // Key by editing expense so the modal's state initializers re-run on
+        // every open (nextjs-review #31 — state populated on OPEN).
+        key={editingExpense?.id ?? "new"}
         isOpen={isExpenseModalOpen}
-        onClose={() => setIsExpenseModalOpen(false)}
+        onClose={closeExpenseModal}
         groupId={groupId}
         members={groupView.members}
         currentUserId={currentUserId}
-        onSaved={() => setIsExpenseModalOpen(false)}
+        editingExpense={editingExpense}
+        onSaved={closeExpenseModal}
       />
     </div>
   );

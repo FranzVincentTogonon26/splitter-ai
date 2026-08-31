@@ -148,6 +148,13 @@ export async function getGroupView(
       yourShareCents,
       yourShareLabel: fm(yourShareCents),
       isRecent: Date.now() - e.createdAt.getTime() < 60_000,
+      // Edit-prefill data (phase 12)
+      currency: e.currency,
+      nativeAmountCents: e.nativeAmountCents,
+      splits: e.splits.map((s) => ({
+        userId: s.userId,
+        amountCents: s.amountCents,
+      })),
     };
   });
 

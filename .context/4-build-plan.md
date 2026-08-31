@@ -133,19 +133,19 @@ with pictures, not longer prompts:
 
 ## 12 Edit Expense
 
-- [ ] Pencil icon per expense row opens the same modal as Add, pre-filled —
+- [x] Pencil icon per expense row opens the same modal as Add, pre-filled —
       ONE component (`components/expense-modal.tsx`), an `expense` prop
       switches add/edit; no separate edit form
-- [ ] Pre-fill reconstructs entered-currency shares from stored USD splits
-      via the same proportional exact-sum math (`convertSplits` in reverse);
+- [x] Pre-fill reconstructs entered-currency shares from stored USD splits
+      via the same proportional exact-sum math (`reverseConvertSplits`);
       equal-ish splits reopen in "equally" mode, others as exact amounts
-- [ ] `updateExpense` runs the identical validation + conversion as
-      `addExpense` (shared helper) — an edit is a re-entry, re-converted at
-      today's rate
-- [ ] Splits rewritten wholesale in one nested update (`deleteMany` +
+- [x] `updateExpense` runs the identical validation + conversion as
+      `addExpense` (shared `validateExpenseInput` helper) — an edit is a
+      re-entry, re-converted at today's rate
+- [x] Splits rewritten wholesale in one nested update (`deleteMany` +
       `create`) so total and shares can't drift; update scoped by `groupId`
-- [ ] Form state populated on OPEN (not reset on close) so a reopen after
-      save shows the saved values
+- [x] Form state populated on OPEN (modal keyed by editing expense id) so
+      a reopen after save shows the saved values
 
 ## 13 Ledger Visibility
 
