@@ -4,6 +4,7 @@ import * as React from "react";
 import { Sparkles } from "lucide-react";
 
 import { addExpense } from "@/app/actions/expenses";
+import { parseExpenseText } from "@/app/actions/ai";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -97,6 +98,29 @@ export function ExpenseModal({
     Record<string, number>
   >({});
   const [aiText, setAiText] = React.useState("");
+  const [aiPending, startAiTransition] = React.useTransition();
+  const [aiError, setAiError] = React.useState("");
+
+  // The AI fills the same fields manual entry uses — one validation path.
+  const handleAiParse = () => {
+    setAiError("");
+    startAiTransition(async () => {
+      const result = await parseExpenseText(aiText);
+      if (result.ok) {
+        setDescription(result.description);
+        setAmount(result.amount);
+        setCurrency(result.currency);
+        // Stale percentage/exact prefills no longer match the new amount —
+        // reset to equal splits, which is always valid for any total.
+        setSplitMode("equal");
+        setPercentages({});
+        setExactAmounts({});
+        setAiText("");
+      } else {
+        setAiError(result.error);
+      }
+    });
+  };
 
   const [state, formAction] = React.useActionState(
     async (_: unknown, formData: FormData) => {
@@ -205,17 +229,27 @@ export function ExpenseModal({
                 <Input
                   value={aiText}
                   onChange={(e) => setAiText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAiParse();
+                    }
+                  }}
                   placeholder={'e.g. "dinner in Tokyo 4500 yen"'}
                   className="border-2 border-primary/50 bg-background focus-visible:ring-primary/20"
                 />
                 <Button
                   type="button"
                   className="border-0 bg-muted text-muted-foreground hover:bg-muted/70"
-                  disabled
+                  disabled={aiPending || !aiText.trim()}
+                  onClick={handleAiParse}
                 >
-                  Parse
+                  {aiPending ? "Reading…" : "Parse"}
                 </Button>
               </div>
+              {aiError && (
+                <p className="text-sm text-rose-500">{aiError}</p>
+              )}
             </div>
           )}
 

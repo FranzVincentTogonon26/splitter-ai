@@ -88,10 +88,12 @@ with pictures, not longer prompts:
 
 ## 08 AI Quick-Add
 
-- [ ] ✨ box in the expense modal: free text → `claude-sonnet-4-5` via
+- [x] ✨ box in the expense modal: free text → `claude-sonnet-4-5` via
       `messages.parse` + `zodOutputFormat` → {description, amount, currency}
-- [ ] Currency constrained to the supported enum; AI never does money math
-- [ ] Graceful degradation without `ANTHROPIC_API_KEY`
+- [x] Currency constrained to the supported enum; AI never does money math
+      (lib/ai.ts validates + rounds to cents deterministically)
+- [x] Graceful degradation without `ANTHROPIC_API_KEY` (and on any model or
+      network failure): friendly error, manual entry untouched
 
 ## 09 Design System & Theming
 

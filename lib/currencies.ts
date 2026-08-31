@@ -52,6 +52,35 @@ export const CURRENCIES: readonly CurrencyInfo[] = [
 
 const SUPPORTED_CURRENCY_SET = new Set(CURRENCIES.map((c) => c.code));
 
+/**
+ * The same 20 codes as a const tuple — the zod enum source for the AI
+ * structured output (the model may only answer with one of these).
+ */
+export const CURRENCY_CODES = [
+  "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "INR",
+  "CNY",
+  "CAD",
+  "AUD",
+  "CHF",
+  "SGD",
+  "HKD",
+  "KRW",
+  "BRL",
+  "MXN",
+  "ZAR",
+  "NOK",
+  "SEK",
+  "DKK",
+  "PLN",
+  "CZK",
+] as const;
+
+export type CurrencyCode = (typeof CURRENCY_CODES)[number];
+
 /** True when `code` is one of the 20 supported ECB currency codes. */
 export function isSupportedCurrency(
   code: string | undefined | null,
