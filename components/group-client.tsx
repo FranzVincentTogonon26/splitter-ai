@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Sparkles, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { addMember } from "@/app/actions/groups";
-import { settleUp } from "@/app/actions/expenses";
+import { deleteExpense, settleUp } from "@/app/actions/expenses";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BalancePill } from "@/components/balance-pill";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,11 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function ExpenseRow({
   expense,
+  groupId,
   onEdit,
 }: {
   expense: GroupView["expenses"][0];
+  groupId: string;
   onEdit: () => void;
 }) {
   return (
@@ -49,16 +52,44 @@ function ExpenseRow({
         >
           <Pencil className="h-4 w-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled
-          aria-label="Delete expense"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <DeleteExpenseButton groupId={groupId} expenseId={expense.id} />
       </div>
     </div>
+  );
+}
+
+function DeleteExpenseButton({
+  groupId,
+  expenseId,
+}: {
+  groupId: string;
+  expenseId: string;
+}) {
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      disabled={pending}
+      aria-label="Delete expense"
+      onClick={() =>
+        startTransition(async () => {
+          const result = await deleteExpense(groupId, expenseId);
+          if (result.error) {
+            toast.error(result.error);
+          } else {
+            toast.success("Expense deleted");
+          }
+        })
+      }
+    >
+      {pending ? (
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+      ) : (
+        <Trash2 className="h-4 w-4" />
+      )}
+    </Button>
   );
 }
 
@@ -83,7 +114,12 @@ function SettleButton({
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          await settleUp(groupId, fromUserId, toUserId, amountCents);
+          const result = await settleUp(groupId, fromUserId, toUserId, amountCents);
+          if (result.error) {
+            toast.error(result.error);
+          } else {
+            toast.success("Settled up");
+          }
         })
       }
     >
@@ -162,7 +198,12 @@ export default function GroupClient({
     setAddMemberError("");
     startAddMemberTransition(async () => {
       const result = await addMember(groupId, { error: "" }, formData);
-      if (result.error) setAddMemberError(result.error);
+      if (result.error) {
+        setAddMemberError(result.error);
+        toast.error(result.error);
+      } else {
+        toast.success("Member added");
+      }
     });
   };
 
@@ -220,6 +261,7 @@ export default function GroupClient({
                 <ExpenseRow
                   key={expense.id}
                   expense={expense}
+                  groupId={groupId}
                   onEdit={() => setIsExpenseModalOpen(true)}
                 />
               ))}

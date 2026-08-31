@@ -120,14 +120,16 @@ with pictures, not longer prompts:
 
 ## 11 Feedback & List Actions
 
-- [ ] Every action button: pending label + sonner toast (rule encoded in
-      Invariants + nextjs-review skill)
-- [ ] Explicit `type="submit"` on form buttons (Base UI defaults to
+- [x] Every action button: pending label + sonner toast (create group,
+      add member, settle up, save expense, delete expense)
+- [x] Explicit `type="submit"` on form buttons (Base UI defaults to
       `type="button"`)
-- [ ] Selects render names via `items` map — never raw Clerk userIds
-- [ ] Delete expense: trash icon per row → spinner → toast; group-scoped
-- [ ] Sparkle indicator on expenses added in the last minute
-- [ ] Settle up available to either party of a debt
+- [x] Selects render names via `items` map — never raw Clerk userIds
+      (done in the phase 09 migration)
+- [x] Delete expense: trash icon per row → spinner → toast; group-scoped
+      and atomic (splits + expense in one transaction); settlements untouched
+- [x] Sparkle indicator on expenses added in the last minute
+- [x] Settle up available to either party of a debt
 
 ## 12 Edit Expense
 

@@ -109,3 +109,39 @@ export async function settleUp(
   revalidatePath(`/groups/${groupId}`);
   return {};
 }
+
+export type DeleteExpenseState = { error?: string };
+
+/**
+ * Delete one expense and its splits, atomically. Group-scoped: the caller
+ * must be a member of the group the expense belongs to, and the expense id
+ * is re-checked against the groupId so cross-group deletes fail cleanly.
+ * Settlements are never touched — a recorded payment is its own fact
+ * (architecture invariant).
+ */
+export async function deleteExpense(
+  groupId: string,
+  expenseId: string,
+): Promise<DeleteExpenseState> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated");
+
+  const membership = await db.groupMember.findFirst({
+    where: { groupId, userId },
+  });
+  if (!membership) return { error: "Group not found" };
+
+  const expense = await db.expense.findUnique({ where: { id: expenseId } });
+  if (!expense || expense.groupId !== groupId) {
+    return { error: "Expense not found" };
+  }
+
+  await db.$transaction([
+    db.expenseSplit.deleteMany({ where: { expenseId } }),
+    db.expense.delete({ where: { id: expenseId } }),
+  ]);
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/groups/${groupId}`);
+  return {};
+}

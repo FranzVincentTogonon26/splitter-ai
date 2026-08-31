@@ -1,17 +1,20 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/lib/db";
 
-export async function createGroup(formData: FormData) {
+export type CreateGroupState = { error?: string; groupId?: string };
+
+export async function createGroup(
+  formData: FormData,
+): Promise<CreateGroupState> {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
   const name = String(formData.get("name") ?? "").trim();
-  if (!name) return;
+  if (!name) return { error: "Enter a group name" };
 
   const group = await db.$transaction(async (tx) => {
     const created = await tx.group.create({ data: { name } });
@@ -22,7 +25,9 @@ export async function createGroup(formData: FormData) {
   });
 
   revalidatePath("/dashboard");
-  redirect(`/groups/${group.id}`);
+  // No server redirect: the client shows a success toast and navigates
+  // itself (nextjs-review #12 — router.push when a toast follows).
+  return { groupId: group.id };
 }
 
 export type AddMemberState = { error?: string };

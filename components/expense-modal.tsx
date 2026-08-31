@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { addExpense } from "@/app/actions/expenses";
 import { parseExpenseText } from "@/app/actions/ai";
@@ -135,7 +136,13 @@ export function ExpenseModal({
 
   const [state, formAction] = React.useActionState(
     async (_: unknown, formData: FormData) => {
-      return addExpense(groupId, { error: "" }, formData);
+      const result = await addExpense(groupId, { error: "" }, formData);
+      if (result.ok) {
+        toast.success("Expense added");
+      } else if (result.error) {
+        toast.error(result.error);
+      }
+      return result;
     },
     { error: "" },
   );

@@ -2,10 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
-import { createGroup } from "@/app/actions/groups";
+import { CreateGroupForm } from "@/components/create-group-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BalancePill } from "@/components/balance-pill";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CurrencySelect } from "@/components/currency-select";
 import { resolveDisplay } from "@/lib/fx";
@@ -107,16 +106,7 @@ export default async function DashboardPage({
 
       <div className="mt-12 flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-2xl font-bold tracking-tight">Your groups</h2>
-        <form action={createGroup} className="flex items-center gap-3">
-          <input
-            name="name"
-            type="text"
-            placeholder="New group name..."
-            required
-            className="h-10 w-52 bg-transparent border border-border px-4 py-5 rounded-lg px-1 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-0"
-          />
-          <Button type="submit">Create group</Button>
-        </form>
+        <CreateGroupForm />
       </div>
 
       {dashboard.groups.length === 0 ? (
